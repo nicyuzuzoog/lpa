@@ -9,7 +9,7 @@ let settingsCache = null;
 export async function getSchoolSettings() {
   if (settingsCache) return settingsCache;
   try {
-    const d = await get('/settings');
+    const d = await get('/settings/branding');
     settingsCache = d.settings || {};
   } catch {
     settingsCache = {};

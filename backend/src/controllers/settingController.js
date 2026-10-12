@@ -14,11 +14,22 @@ const ALLOWED_KEYS = [
   'academic_year_label',
 ];
 
+function readSettings() {
+  return Setting.find({ key: { $in: ALLOWED_KEYS } }).then((docs) => {
+    const settings = Object.fromEntries(docs.map((d) => [d.key, d.value]));
+    for (const key of ALLOWED_KEYS) if (!(key in settings)) settings[key] = '';
+    if (!settings.currency) settings.currency = 'RWF';
+    return settings;
+  });
+}
+
 export const getSettings = asyncHandler(async (req, res) => {
-  const docs = await Setting.find({ key: { $in: ALLOWED_KEYS } });
-  const settings = Object.fromEntries(docs.map((d) => [d.key, d.value]));
-  for (const key of ALLOWED_KEYS) if (!(key in settings)) settings[key] = '';
-  if (!settings.currency) settings.currency = 'RWF';
+  const settings = await readSettings();
+  res.json({ success: true, settings });
+});
+
+export const getBranding = asyncHandler(async (req, res) => {
+  const settings = await readSettings();
   res.json({ success: true, settings });
 });
 
@@ -43,7 +54,6 @@ export const updateSettings = asyncHandler(async (req, res) => {
     newValue: Object.fromEntries(Object.entries(changes).map(([k, v]) => [k, v.to])),
   });
 
-  const docs = await Setting.find({ key: { $in: ALLOWED_KEYS } });
-  const settings = Object.fromEntries(docs.map((d) => [d.key, d.value]));
+  const settings = await readSettings();
   res.json({ success: true, settings });
 });

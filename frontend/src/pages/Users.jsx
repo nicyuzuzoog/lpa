@@ -93,10 +93,6 @@ export default function Users() {
 
   const teacherPayload = () => {
     if (form.role !== 'TEACHER') return {};
-    if (!form.classTeacherOf) {
-      toast.error('Select the class this teacher is the class reader of');
-      return null;
-    }
     const seen = new Set();
     const assignments = [];
     for (const a of form.teachingAssignments) {
@@ -109,7 +105,7 @@ export default function Users() {
       seen.add(key);
       assignments.push({ class: a.class, subject: a.subject });
     }
-    return { classTeacherOf: form.classTeacherOf, teachingAssignments: assignments };
+    return { classTeacherOf: form.classTeacherOf || '', teachingAssignments: assignments };
   };
 
   const save = async (e) => {
@@ -255,9 +251,9 @@ export default function Users() {
           {form.role === 'TEACHER' && (
             <div className="sm:col-span-2 rounded-xl border border-green-100 bg-green-50/50 p-4">
               <p className="mb-3 text-sm font-semibold text-green-800">Teaching assignments</p>
-              <Field label="Class reader of (homeroom)" required hint="A teacher takes daily attendance for this class only.">
+              <Field label="Class reader of (homeroom)" hint="Optional. A class reader takes daily attendance for this class. Leave empty if this teacher is not a class reader.">
                 <Select value={form.classTeacherOf} onChange={(e) => setForm({ ...form, classTeacherOf: e.target.value })}>
-                  <option value="">Select class</option>
+                  <option value="">Not a class reader</option>
                   {classes.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
                 </Select>
               </Field>

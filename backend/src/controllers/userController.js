@@ -15,17 +15,20 @@ async function resolveTeachingPayload(body, role, currentUserId = null) {
 
   const { classTeacherOf, teachingAssignments } = body;
 
-  if (!classTeacherOf || !mongoose.isValidObjectId(classTeacherOf)) {
-    throw new ApiError(400, 'A teacher must be the class-reader of one class');
+  let homeroomId;
+  if (classTeacherOf) {
+    if (!mongoose.isValidObjectId(classTeacherOf)) {
+      throw new ApiError(400, 'The selected class-reader class is invalid');
+    }
+    const homeroom = await SchoolClass.findById(classTeacherOf);
+    if (!homeroom) throw new ApiError(400, 'The selected class-reader class does not exist');
+
+    const clashFilter = { classTeacherOf };
+    if (currentUserId) clashFilter._id = { $ne: currentUserId };
+    const clash = await User.findOne(clashFilter);
+    if (clash) throw new ApiError(409, `${homeroom.name} already has a class reader (${clash.fullName})`);
+    homeroomId = classTeacherOf;
   }
-
-  const homeroom = await SchoolClass.findById(classTeacherOf);
-  if (!homeroom) throw new ApiError(400, 'The selected class-reader class does not exist');
-
-  const clashFilter = { classTeacherOf };
-  if (currentUserId) clashFilter._id = { $ne: currentUserId };
-  const clash = await User.findOne(clashFilter);
-  if (clash) throw new ApiError(409, `${homeroom.name} already has a class reader (${clash.fullName})`);
 
   const assignments = [];
   const seen = new Set();
@@ -46,7 +49,7 @@ async function resolveTeachingPayload(body, role, currentUserId = null) {
     assignments.push({ class: classId, subject });
   }
 
-  return { classTeacherOf, teachingAssignments: assignments };
+  return { classTeacherOf: homeroomId, teachingAssignments: assignments };
 }
 
 export const listUsers = asyncHandler(async (req, res) => {

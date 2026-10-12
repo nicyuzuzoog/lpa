@@ -12,6 +12,8 @@ import {
   saveMarks,
   getAssessmentReport,
   getClassReport,
+  getClassAssignments,
+  setClassAssignment,
 } from '../controllers/teachingController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/rbac.js';
@@ -35,5 +37,8 @@ router.put('/assessments/:id/marks', requirePermission('assessments:manage'), sa
 router.get('/assessments/:id/report', requirePermission('assessments:read'), getAssessmentReport);
 
 router.get('/report', requirePermission('assessments:read'), getClassReport);
+
+router.get('/assignments', requirePermission('teachers:manage'), getClassAssignments);
+router.post('/assignments', requirePermission('teachers:manage'), setClassAssignment);
 
 export default router;

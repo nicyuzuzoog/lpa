@@ -71,7 +71,7 @@ export default function Layout() {
     let alive = true;
     const load = async () => {
       try {
-        const [n, s] = await Promise.all([get('/notifications/unread-count'), get('/settings')]);
+        const [n, s] = await Promise.all([get('/notifications/unread-count'), get('/settings/branding')]);
         if (!alive) return;
         setUnread(n.unread || 0);
         if (s.settings?.school_name) setSchoolName(s.settings.school_name);

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Student from '../models/Student.js';
 import SchoolClass from '../models/SchoolClass.js';
 import AcademicYear from '../models/AcademicYear.js';
+import User from '../models/User.js';
 import Attendance, { ATTENDANCE_STATUSES } from '../models/Attendance.js';
 import Assessment, { PASS_PERCENTAGE } from '../models/Assessment.js';
 import ApiError from '../utils/ApiError.js';
@@ -766,4 +767,82 @@ export const getClassReport = asyncHandler(async (req, res) => {
     rows,
     summary,
   });
+});
+
+// ---------------------------------------------------------------------------
+// Class subject -> teacher assignments (class + subject per teacher)
+// ---------------------------------------------------------------------------
+
+async function assignmentsForClass(classId) {
+  const teachers = await User.find({ role: 'TEACHER', status: 'ACTIVE' })
+    .select('fullName username teachingAssignments')
+    .sort('fullName');
+  const bySubject = new Map();
+  for (const t of teachers) {
+    for (const a of t.teachingAssignments || []) {
+      if (String(a.class) === String(classId)) {
+        bySubject.set(a.subject, { subject: a.subject, teacher: { _id: t._id, fullName: t.fullName } });
+      }
+    }
+  }
+  return [...bySubject.values()];
+}
+
+export const getClassAssignments = asyncHandler(async (req, res) => {
+  const classId = req.query.class || req.params.id;
+  if (!classId || !mongoose.isValidObjectId(classId)) throw new ApiError(400, 'A valid class is required');
+  const cls = await SchoolClass.findById(classId);
+  if (!cls) throw new ApiError(404, 'Class not found');
+
+  const teachers = await User.find({ role: 'TEACHER', status: 'ACTIVE' })
+    .select('fullName username')
+    .sort('fullName');
+
+  res.json({
+    success: true,
+    class: { _id: cls._id, name: cls.name },
+    teachers: teachers.map((t) => ({ _id: t._id, fullName: t.fullName, username: t.username })),
+    assignments: await assignmentsForClass(classId),
+  });
+});
+
+export const setClassAssignment = asyncHandler(async (req, res) => {
+  const { class: classId, subject, teacher } = req.body || {};
+  if (!classId || !mongoose.isValidObjectId(classId)) throw new ApiError(400, 'A valid class is required');
+  const cls = await SchoolClass.findById(classId);
+  if (!cls) throw new ApiError(404, 'Class not found');
+  if (!SUBJECT_CODES.includes(subject)) throw new ApiError(400, 'A valid subject is required');
+
+  // One teacher per class + subject: clear this pair from every teacher first.
+  await User.updateMany(
+    { role: 'TEACHER' },
+    { $pull: { teachingAssignments: { class: classId, subject } } }
+  );
+
+  let assigned = null;
+  if (teacher) {
+    if (!mongoose.isValidObjectId(teacher)) throw new ApiError(400, 'Invalid teacher');
+    const t = await User.findOne({ _id: teacher, role: 'TEACHER' });
+    if (!t) throw new ApiError(404, 'Teacher not found');
+    t.teachingAssignments = [
+      ...(t.teachingAssignments || []).filter(
+        (a) => !(String(a.class) === String(classId) && a.subject === subject)
+      ),
+      { class: classId, subject },
+    ];
+    await t.save();
+    assigned = t.fullName;
+  }
+
+  await recordAudit({
+    user: req.user,
+    action: 'UPDATE',
+    module: 'TEACHERS',
+    recordId: classId,
+    recordLabel: `${cls.name} - ${subjectLabel(subject)}`,
+    newValue: { class: cls.name, subject, teacher: assigned },
+    reason: assigned ? 'Class subject teacher assigned' : 'Class subject teacher cleared',
+  });
+
+  res.json({ success: true, assignments: await assignmentsForClass(classId) });
 });

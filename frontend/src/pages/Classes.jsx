@@ -3,6 +3,7 @@ import { get, post, put, apiDelete } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { statusColor } from '../utils/format.js';
+import { SUBJECTS } from '../utils/subjects.js';
 import { isIntInRange } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
@@ -17,6 +18,10 @@ export default function Classes() {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({ name: '', level: 'PRIMARY', order: 0, status: 'ACTIVE' });
   const [saving, setSaving] = useState(false);
+
+  const [assignClass, setAssignClass] = useState(null);
+  const [assignData, setAssignData] = useState(null);
+  const [assignSaving, setAssignSaving] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,6 +80,34 @@ export default function Classes() {
     }
   };
 
+  const openAssign = async (c) => {
+    setAssignClass(c);
+    setAssignData(null);
+    try {
+      const d = await get(`/teaching/assignments?class=${c._id}`);
+      setAssignData(d);
+    } catch (e) {
+      toast.error(e.message);
+      setAssignClass(null);
+    }
+  };
+
+  const assignedTeacher = (subject) =>
+    assignData?.assignments?.find((a) => a.subject === subject)?.teacher?._id || '';
+
+  const setAssignment = async (subject, teacher) => {
+    setAssignSaving(subject);
+    try {
+      const d = await post('/teaching/assignments', { class: assignClass._id, subject, teacher });
+      setAssignData((prev) => ({ ...prev, assignments: d.assignments }));
+      toast.success(teacher ? 'Teacher assigned' : 'Assignment cleared');
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setAssignSaving('');
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -99,6 +132,7 @@ export default function Classes() {
               render: (r) =>
                 can('classes:manage') && (
                   <span className="flex justify-end gap-3 text-sm">
+                    <button onClick={() => openAssign(r)} className="font-medium text-green-700 hover:underline">Teachers</button>
                     <button onClick={() => openEdit(r)} className="font-medium text-green-700 hover:underline">Edit</button>
                     {r.status === 'ACTIVE' && (
                       <button onClick={() => archive(r)} className="font-medium text-red-600 hover:underline">Deactivate</button>
@@ -144,6 +178,43 @@ export default function Classes() {
             </Select>
           </Field>
         </form>
+      </Modal>
+
+      <Modal
+        open={!!assignClass}
+        onClose={() => setAssignClass(null)}
+        title={`Teachers — ${assignClass?.name || ''}`}
+        size="md"
+        footer={<Button variant="secondary" onClick={() => setAssignClass(null)}>Done</Button>}
+      >
+        {!assignData ? (
+          <Spinner />
+        ) : !assignData.teachers.length ? (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+            No teachers yet. Create a teacher from the Users page first.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">
+              Pick the teacher that teaches each subject in this class. One teacher per subject.
+            </p>
+            {SUBJECTS.map((s) => (
+              <div key={s.code} className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_1.2fr]">
+                <span className="text-sm font-medium text-gray-700">{s.name}</span>
+                <Select
+                  value={assignedTeacher(s.code)}
+                  disabled={assignSaving === s.code}
+                  onChange={(e) => setAssignment(s.code, e.target.value)}
+                >
+                  <option value="">Not assigned</option>
+                  {assignData.teachers.map((t) => (
+                    <option key={t._id} value={t._id}>{t.fullName}</option>
+                  ))}
+                </Select>
+              </div>
+            ))}
+          </div>
+        )}
       </Modal>
     </div>
   );

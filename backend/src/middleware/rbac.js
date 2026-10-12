@@ -47,7 +47,7 @@ export const PERMISSIONS = {
 
   'users:read': ['SUPER_ADMIN'],
   'users:manage': ['SUPER_ADMIN'],
-  'settings:read': STAFF,
+  'settings:read': ALL,
   'settings:manage': ['SUPER_ADMIN'],
 };
 
