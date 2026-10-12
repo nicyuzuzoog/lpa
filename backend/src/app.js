@@ -1,8 +1,10 @@
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+
 import config from './config/index.js';
 import errorHandler, { notFound } from './middleware/error.js';
 
@@ -24,11 +26,41 @@ import teachingRoutes from './routes/teaching.js';
 
 const app = express();
 
-app.use(helmet());
-app.use(cors({ origin: config.corsOrigin.split(','), credentials: true }));
-app.use(express.json({ limit: '5mb' }));
-if (config.nodeEnv === 'development') app.use(morgan('dev'));
+app.disable('x-powered-by');
 
+app.use(helmet());
+
+// CORS: allow only explicitly configured frontend origins.
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Requests without Origin include health checks and server-to-server calls.
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+
+      if (config.corsOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Origin not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
+  })
+);
+
+app.use(express.json({ limit: '5mb' }));
+
+if (config.nodeEnv === 'development') {
+  app.use(morgan('dev'));
+}
+
+// API rate limiting
 app.use(
   '/api',
   rateLimit({
@@ -36,12 +68,23 @@ app.use(
     max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { success: false, message: 'Too many requests, please try again later' },
+    message: {
+      success: false,
+      message: 'Too many requests, please try again later',
+    },
   })
 );
 
-app.get('/api/health', (req, res) => res.json({ success: true, status: 'ok', time: new Date().toISOString() }));
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    time: new Date().toISOString(),
+  });
+});
 
+// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/classes', classRoutes);
@@ -58,6 +101,7 @@ app.use('/api/settings', settingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/teaching', teachingRoutes);
 
+// Error handlers must come after the routes.
 app.use(notFound);
 app.use(errorHandler);
 
