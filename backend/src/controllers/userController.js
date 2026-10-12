@@ -1,9 +1,53 @@
+import mongoose from 'mongoose';
 import User, { ROLES } from '../models/User.js';
+import SchoolClass from '../models/SchoolClass.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { parsePagination } from '../utils/sequence.js';
 import { recordAudit, diffObjects } from '../services/auditService.js';
 import { notify } from '../services/notificationService.js';
+import { SUBJECT_CODES } from '../constants/subjects.js';
+
+async function resolveTeachingPayload(body, role, currentUserId = null) {
+  if (role !== 'TEACHER') {
+    return { classTeacherOf: undefined, teachingAssignments: [] };
+  }
+
+  const { classTeacherOf, teachingAssignments } = body;
+
+  if (!classTeacherOf || !mongoose.isValidObjectId(classTeacherOf)) {
+    throw new ApiError(400, 'A teacher must be the class-reader of one class');
+  }
+
+  const homeroom = await SchoolClass.findById(classTeacherOf);
+  if (!homeroom) throw new ApiError(400, 'The selected class-reader class does not exist');
+
+  const clashFilter = { classTeacherOf };
+  if (currentUserId) clashFilter._id = { $ne: currentUserId };
+  const clash = await User.findOne(clashFilter);
+  if (clash) throw new ApiError(409, `${homeroom.name} already has a class reader (${clash.fullName})`);
+
+  const assignments = [];
+  const seen = new Set();
+  for (const entry of Array.isArray(teachingAssignments) ? teachingAssignments : []) {
+    const classId = entry?.class;
+    const subject = entry?.subject;
+    if (!classId || !mongoose.isValidObjectId(classId)) {
+      throw new ApiError(400, 'Every teaching assignment needs a valid class');
+    }
+    if (!SUBJECT_CODES.includes(subject)) {
+      throw new ApiError(400, 'Every teaching assignment needs a valid subject');
+    }
+    const key = `${classId}:${subject}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const exists = await SchoolClass.findById(classId);
+    if (!exists) throw new ApiError(400, 'A teaching assignment references a class that does not exist');
+    assignments.push({ class: classId, subject });
+  }
+
+  return { classTeacherOf, teachingAssignments: assignments };
+}
 
 export const listUsers = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
@@ -32,7 +76,16 @@ export const createUser = asyncHandler(async (req, res) => {
   const exists = await User.findOne({ username: username.toLowerCase().trim() });
   if (exists) throw new ApiError(409, 'This username is already taken');
 
-  const user = await User.create({ fullName, username, password, role, email: email || null });
+  const teaching = await resolveTeachingPayload(req.body, role);
+
+  const user = await User.create({
+    fullName,
+    username,
+    password,
+    role,
+    email: email || null,
+    ...teaching,
+  });
 
   await recordAudit({
     user: req.user,
@@ -68,6 +121,23 @@ export const updateUser = asyncHandler(async (req, res) => {
   if (fullName) user.fullName = fullName;
   if (email !== undefined) user.email = email || null;
   if (role) user.role = role;
+
+  const teachingTouched =
+    req.body.classTeacherOf !== undefined || req.body.teachingAssignments !== undefined;
+
+  if (user.role === 'TEACHER' && (teachingTouched || (role && role === 'TEACHER'))) {
+    const merged = {
+      classTeacherOf: req.body.classTeacherOf ?? user.classTeacherOf,
+      teachingAssignments: req.body.teachingAssignments ?? user.teachingAssignments,
+    };
+    const teaching = await resolveTeachingPayload(merged, 'TEACHER', user._id);
+    user.classTeacherOf = teaching.classTeacherOf;
+    user.teachingAssignments = teaching.teachingAssignments;
+  } else if (role && role !== 'TEACHER') {
+    user.classTeacherOf = undefined;
+    user.teachingAssignments = [];
+  }
+
   if (status) {
     if (!['ACTIVE', 'DISABLED'].includes(status)) throw new ApiError(400, 'Invalid status');
     if (status === 'DISABLED' && req.user._id.equals(user._id)) throw new ApiError(400, 'You cannot disable your own account');

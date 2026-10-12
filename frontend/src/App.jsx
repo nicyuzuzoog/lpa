@@ -23,6 +23,10 @@ import AuditLog from './pages/AuditLog.jsx';
 import Users from './pages/Users.jsx';
 import Settings from './pages/Settings.jsx';
 import Profile from './pages/Profile.jsx';
+import Attendance from './pages/Attendance.jsx';
+import Assessments from './pages/Assessments.jsx';
+import AssessmentDetail from './pages/AssessmentDetail.jsx';
+import PerformanceReport from './pages/PerformanceReport.jsx';
 
 function Protected({ children, perm }) {
   const { user, loading, can } = useAuth();
@@ -72,6 +76,10 @@ export default function App() {
         <Route path="students/:id" element={<Protected perm="students:read"><StudentDetail /></Protected>} />
         <Route path="classes" element={<Protected perm="classes:read"><Classes /></Protected>} />
         <Route path="academic-years" element={<Protected perm="academicYears:read"><AcademicYears /></Protected>} />
+        <Route path="attendance" element={<Protected perm="attendance:read"><Attendance /></Protected>} />
+        <Route path="assessments" element={<Protected perm="assessments:read"><Assessments /></Protected>} />
+        <Route path="assessments/report" element={<Protected perm="assessments:read"><PerformanceReport /></Protected>} />
+        <Route path="assessments/:id" element={<Protected perm="assessments:read"><AssessmentDetail /></Protected>} />
         <Route path="fees" element={<Protected perm="fees:read"><Fees /></Protected>} />
         <Route path="payments" element={<Protected perm="payments:read"><Payments /></Protected>} />
         <Route path="payments/balances" element={<Protected perm="payments:read"><Balances /></Protected>} />

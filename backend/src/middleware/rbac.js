@@ -1,18 +1,26 @@
 import ApiError from '../utils/ApiError.js';
 
 const ALL = ['SUPER_ADMIN', 'ACCOUNTANT', 'BIG_BOSS'];
+const STAFF = [...ALL, 'TEACHER'];
 
 export const PERMISSIONS = {
-  'dashboard:read': ALL,
+  'dashboard:read': STAFF,
   'students:read': ALL,
   'students:create': ['SUPER_ADMIN', 'ACCOUNTANT'],
   'students:update': ['SUPER_ADMIN', 'ACCOUNTANT'],
   'students:archive': ['SUPER_ADMIN', 'ACCOUNTANT'],
 
-  'classes:read': ALL,
+  'classes:read': STAFF,
   'classes:manage': ['SUPER_ADMIN'],
-  'academicYears:read': ALL,
+  'academicYears:read': STAFF,
   'academicYears:manage': ['SUPER_ADMIN'],
+
+  'attendance:read': STAFF,
+  'attendance:mark': ['SUPER_ADMIN', 'TEACHER'],
+  'assessments:read': STAFF,
+  'assessments:manage': ['SUPER_ADMIN', 'TEACHER'],
+  'teaching:read': STAFF,
+  'teachers:manage': ['SUPER_ADMIN'],
 
   'fees:read': ALL,
   'fees:manageStructures': ['SUPER_ADMIN'],
@@ -34,12 +42,12 @@ export const PERMISSIONS = {
   'reports:read': ALL,
   'export': ALL,
 
-  'notifications:read': ALL,
+  'notifications:read': STAFF,
   'audit:read': ALL,
 
   'users:read': ['SUPER_ADMIN'],
   'users:manage': ['SUPER_ADMIN'],
-  'settings:read': ALL,
+  'settings:read': STAFF,
   'settings:manage': ['SUPER_ADMIN'],
 };
 

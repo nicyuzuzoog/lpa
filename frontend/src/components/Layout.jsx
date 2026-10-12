@@ -19,6 +19,14 @@ const NAV = [
     ],
   },
   {
+    section: 'Teaching',
+    items: [
+      { to: '/app/attendance', label: 'Attendance', icon: 'bi-calendar2-check', perm: 'attendance:read' },
+      { to: '/app/assessments', label: 'Assessments', icon: 'bi-clipboard-check', perm: 'assessments:read' },
+      { to: '/app/assessments/report', label: 'Performance Report', icon: 'bi-graph-up-arrow', perm: 'assessments:read' },
+    ],
+  },
+  {
     section: 'Finance',
     items: [
       { to: '/app/payments', label: 'Payments', icon: 'bi-receipt-cutoff', perm: 'payments:read' },

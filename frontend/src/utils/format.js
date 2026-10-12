@@ -65,5 +65,10 @@ export function feeTypeLabel(t) {
 }
 
 export function roleLabel(r) {
-  return { SUPER_ADMIN: 'Super Admin', ACCOUNTANT: 'Accountant', BIG_BOSS: 'Big Boss' }[r] || r;
+  return {
+    SUPER_ADMIN: 'Super Admin',
+    ACCOUNTANT: 'Accountant',
+    BIG_BOSS: 'Big Boss',
+    TEACHER: 'Teacher',
+  }[r] || r;
 }

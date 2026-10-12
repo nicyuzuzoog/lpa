@@ -14,6 +14,67 @@ import Payment from './models/Payment.js';
 import { nextSequence, pad } from './utils/sequence.js';
 import { refreshUniformEntitlements } from './services/feeService.js';
 
+// ============================================================================
+// SYSTEM USERS
+// ============================================================================
+const SYSTEM_USERS = [
+  {
+    fullName: 'System Administrator',
+    username: 'nicjbdede@gmail.com',
+    email: 'nicjbdede@gmail.com',
+    password: 'admin12345',
+    role: 'SUPER_ADMIN',
+  },
+  {
+    fullName: 'School Accountant',
+    username: 'karizaallen@gmail.com',
+    email: 'karizaallen@gmail.com',
+    password: 'kariza@12345',
+    role: 'ACCOUNTANT',
+  },
+  {
+    fullName: 'Big Boss',
+    username: 'dushimedavid115@gmail.com',
+    email: 'dushimedavid115@gmail.com',
+    password: 'dushimimanad12345',
+    role: 'BIG_BOSS',
+  },
+];
+
+// ============================================================================
+// TEACHERS (added by the Super Admin; each is class-reader of ONE class but
+// may teach subjects across many classes)
+// ============================================================================
+const TEACHERS = [
+  {
+    fullName: 'Alice Uwase',
+    username: 'teacher.alice',
+    email: 'alice.uwase@lpa.rw',
+    password: 'teacher12345',
+    homeroom: 'P5',
+    assignments: [
+      { subject: 'KIN', class: 'P5' },
+      { subject: 'KIN', class: 'P1' },
+      { subject: 'MAT', class: 'P5' },
+    ],
+  },
+  {
+    fullName: 'Jean Bosco Habimana',
+    username: 'teacher.jean',
+    email: 'jean.bosco@lpa.rw',
+    password: 'teacher12345',
+    homeroom: 'P1',
+    assignments: [
+      { subject: 'ENG', class: 'P1' },
+      { subject: 'ENG', class: 'P2' },
+      { subject: 'FRA', class: 'P1' },
+    ],
+  },
+];
+
+// ============================================================================
+// FEES
+// ============================================================================
 const CLASS_FEES = {
   N1: { school: 71000, materials: 30000, uniform: 32000 },
   N2: { school: 71000, materials: 30000, uniform: 32000 },
@@ -37,16 +98,54 @@ const MATERIALS_P45 = [
   { name: 'Pens & Stationery', price: 5000 },
 ];
 
-const UNIFORMS = [
-  { name: 'School Shirt', gender: 'UNISEX', price: 8000 },
-  { name: 'School Shorts - Boys', gender: 'BOYS', price: 8000 },
-  { name: 'School Skirt - Girls', gender: 'GIRLS', price: 8000 },
-  { name: 'Sports Shorts', gender: 'UNISEX', price: 5000 },
-  { name: 'School Sweater', gender: 'UNISEX', price: 7000 },
-  { name: 'Socks', gender: 'UNISEX', price: 4000 },
+const UNIFORM_FEE_ITEMS = [
+  { name: 'Uniform Ikabutura', price: 8000 },
+  { name: 'Uniform Ijipo', price: 8000 },
+  { name: 'Uniform Ishati', price: 7000 },
+  { name: 'Sport Ikabutura', price: 5000 },
+  { name: 'Sport Umupira', price: 3000 },
+  { name: 'Socks Uniform', price: 1000 },
+  { name: 'Socks Sport', price: 500 },
+  { name: 'Umupira', price: 10000 },
 ];
 
-// MoMo Payment Records
+// ============================================================================
+// UNIFORM STOCK LEDGER (L.P.A Rulindo report, 2026-2027, dated 08/10/2026)
+// ============================================================================
+// Item order used by every row of STOCK_DELIVERIES below.
+const UNIFORM_STOCK = [
+  { name: 'Uniform Ikabutura', received: 48, sold: 16, returned: 23, inStock: 9, price: 8000 },
+  { name: 'Uniform Ijipo', received: 47, sold: 44, returned: 2, inStock: 1, price: 8000 },
+  { name: 'Uniform Ishati', received: 61, sold: 46, returned: 7, inStock: 8, price: 7000 },
+  { name: 'Sport Ikabutura', received: 61, sold: 38, returned: 14, inStock: 9, price: 5000 },
+  { name: 'Sport Umupira', received: 41, sold: 23, returned: 8, inStock: 10, price: 3000 },
+  { name: 'Socks Uniform', received: 55, sold: 46, returned: 0, inStock: 9, price: 1000 },
+  { name: 'Socks Sport', received: 66, sold: 48, returned: 0, inStock: 18, price: 500 },
+  { name: 'Umupira', received: 56, sold: 51, returned: 0, inStock: 5, price: 10000 },
+];
+
+// Date-by-date deliveries; columns follow UNIFORM_STOCK order.
+const STOCK_DELIVERIES = [
+  { date: '2026-08-31', label: 'Opening stock (Stok isanzwe)', qty: [6, 7, 0, 5, 3, 1, 0, 6] },
+  { date: '2026-09-01', qty: [6, 12, 3, 13, 1, 12, 12, 0] },
+  { date: '2026-09-03', qty: [0, 0, 8, 0, 0, 0, 0, 0] },
+  { date: '2026-09-06', qty: [2, 9, 16, 16, 0, 0, 0, 0] },
+  { date: '2026-09-08', qty: [10, 0, 0, 20, 20, 12, 24, 0] },
+  { date: '2026-09-14', qty: [10, 0, 0, 0, 0, 0, 0, 0] },
+  { date: '2026-09-15', qty: [0, 10, 10, 1, 0, 0, 0, 0] },
+  { date: '2026-09-16', qty: [0, 0, 0, 0, 0, 30, 30, 0] },
+  { date: '2026-09-21', qty: [0, 0, 0, 0, 0, 0, 0, 30] },
+  { date: '2026-09-22', qty: [0, 0, 5, 2, 4, 0, 0, 0] },
+  { date: '2026-09-28', qty: [0, 0, 0, 0, 10, 0, 0, 0] },
+  { date: '2026-10-01', qty: [14, 5, 16, 0, 0, 0, 0, 0] },
+  { date: '2026-10-02', qty: [0, 2, 3, 0, 0, 0, 0, 0] },
+  { date: '2026-10-06', qty: [0, 0, 0, 0, 0, 0, 0, 20] },
+  { date: '2026-10-07', qty: [0, 0, 0, 3, 3, 0, 0, 0] },
+];
+
+// ============================================================================
+// PAYMENT RECORDS (Mobile Money + Equity Bank lists)
+// ============================================================================
 const MOMO_PAYMENTS = [
   { date: '2026-09-03', studentName: 'INEZA HIRWA SANDRA', amount: 50000, payerName: 'UWAYEZU CLAUDINE' },
   { date: '2026-09-03', studentName: 'CYUSA IMENA HENRI', amount: 3000, payerName: 'NDUWALETA ERIC' },
@@ -136,7 +235,6 @@ const MOMO_PAYMENTS = [
   { date: '2026-10-07', studentName: 'IGIHOZO PRECIAS BRITINNY', amount: 8000, payerName: 'UWIMBABAZI VERENE (CASH EQUITY)' },
 ];
 
-// Equity Bank Payment Records
 const EQUITY_PAYMENTS = [
   { date: '2026-08-25', studentName: 'INEZA INGABIRE JESSCA', amount: 30000, className: 'N1' },
   { date: '2026-08-15', studentName: 'TUYISHIME ORNEILLA', amount: 100000, className: 'P3' },
@@ -240,7 +338,101 @@ const EQUITY_PAYMENTS = [
   { date: '2026-10-08', studentName: 'MFURA RANGIRA GIAN', amount: 20000, className: 'N3' },
 ];
 
-// Complete Roster extracted from Class Sheets (P1 to P5, N2, N3)
+// Summary list "URUTONDE RW'ABANA BARIRA MU KIGO N'UKO BISHYUYE" - the channel
+// each paying family used. Used as the fallback payment channel/payer for any
+// amount that cannot be tied to a dated MoMo / Equity line above.
+const PAYMENT_CHANNELS = [
+  { name: 'IGIHOZO JEHOVANIS', className: 'P5', method: 'BANK', payer: '' },
+  { name: 'IRATABARA YAKINI', className: 'P5', method: 'MOBILE_MONEY', payer: 'SIBOBUGINGO METHODE' },
+  { name: 'IBAMBE KEZA MERVEILLE', className: 'P5', method: 'BANK', payer: '' },
+  { name: 'ISHIMWE INEZA HORORE', className: 'P5', method: 'BANK', payer: '' },
+  { name: 'INEZA HIRWA SANDRA', className: 'P1', method: 'MOBILE_MONEY', payer: 'UWAYEZU CLAUDINE' },
+  { name: 'UWAYO DIVIN', className: 'N3', method: 'BANK', payer: '' },
+  { name: 'HIRWA SHAMI PHILIPPE', className: 'N3', method: 'BANK', payer: '' },
+  { name: 'TULIKUMWENAYO ISABELLE', className: 'P4', method: 'MOBILE_MONEY', payer: 'NDAYISHIMIYE JEROME' },
+  { name: 'NIYOGISUBIZO CHANCE', className: 'P3', method: 'MOBILE_MONEY', payer: 'NDAYISHIMIYE JEROME' },
+  { name: 'IRAGANJE SHEMA KENNY', className: 'P2', method: 'MOBILE_MONEY', payer: 'NDAYISHIMIYE JEROME' },
+  { name: 'CYUBAHIRO GISA LOMEON', className: 'P1', method: 'MOBILE_MONEY', payer: 'NIYOKWIZERWA EDITH' },
+  { name: 'UMWARIWASE KENTIA', className: 'N1', method: 'MOBILE_MONEY', payer: 'MUKAKALISA' },
+  { name: 'MUTUYIMANA KARABO KEZA', className: 'N3', method: 'MOBILE_MONEY', payer: 'GWIZIMPUNDU VESTINE' },
+  { name: 'CYUSA OWEN EMMY', className: 'N2', method: 'BANK', payer: '' },
+  { name: 'UWACU KUNDWA MEGAN', className: 'P1', method: 'MOBILE_MONEY', payer: 'IFITEBYOSE ESTER' },
+  { name: 'INEZA HAPPY CHALOM', className: 'P1', method: 'MOBILE_MONEY', payer: 'BIZIMANA INNOCENT' },
+  { name: 'JESSCA INEZA INGABIRE', className: 'N1', method: 'BANK', payer: '' },
+  { name: 'GANZA IAN', className: 'N3', method: 'BANK', payer: '' },
+];
+
+// Names that are spelled so differently across sheets that fuzzy matching
+// would be unsafe. Key = normalized payment-sheet name, value = roster name.
+const NAME_ALIASES = {
+  UMWARIWASE: 'UMWALI UWASE KETIA',
+  UMWALIWASEKENTIA: 'UMWALI UWASE KETIA',
+  UMWARIWASEKENTIA: 'UMWALI UWASE KETIA',
+  SHAMIHIRWAHILO: 'HIRWA SHAMI HERO',
+  HIRWASHAMIPHILIPPE: 'HIRWA SHAMI PHILIPE',
+  HIRWASHAMIPHILIPPE2: 'HIRWA SHAMI PHILIPE',
+  IGIHOZABIGILIMANABRIELLA: 'IGIHOZO B. BRIELLA',
+  IGIHOZOPRECIASBRITINNY: 'AGAHOZO PRECIAS BRITINNY',
+  GANZAAYAN: 'GANZE IYAN',
+  TWAGILIMANAUTUJEYVES: 'UTUJE YVES',
+  KAMIKAZITETAEMMANUELA: 'KAMIKAZI TETA EMMANUELLA',
+  UWISHIMWEESTER: 'UWISHIMWE ESTHER',
+  IGIRANEZASHEMA: 'IGIRANEZA SHEMA EWAN',
+  KEZAANGEKHUCH: 'KEZA ANGE KHUCHI',
+  GWIZAHABIMANAIRISMIA: 'GWIZA HABIMANA IRIS MIA',
+  HABIMANAGWIZAIRISMIA: 'GWIZA HABIMANA IRIS MIA',
+  INEZAAXEL: 'INEZA AXCEL',
+  INEZAHAPPYCHALOM: 'INEZA HAPPY SHALLOM',
+  UWACUKUNDWAJESSY: 'UWACU KUNDWA JESSY MEGHAN',
+  UWACUKUNDWAMEGAN: 'UWACU KUNDWA JESSY MEGHAN',
+  IRAKOZEBIONCE: 'IRAKOZE Beyonce',
+  RINGUYENEZASEIFALDIN: 'RINGUYENEZA SEIF AL - DIN',
+  NIYONGIRAJEANDAMOUR: "NIYONGIRA JEAN D'AMOUR",
+  NIYONGIRAJEANDAMOURIVAN: "NIYONGIRA JEAN D'AMOUR",
+  NDACYAYISENGAKUNDWASHEMAJUNIORDAGOBERT: 'NDACYAYISENGA SHEMA JUNIOR',
+  CYUZUZOIRASUBIZARAYMOND: 'CYUZUZO NSANZINEZA RAYMOND',
+  NSANZINEZALUCKYBELTRAND: 'NSANZINEZA LUCK BERTLA',
+  AGWIZEKAGASAROALELAMIA: 'AGWIZE KABERA AGASARO MIA',
+  GANZALOGANDYLAN: 'GANZA LOGAN DYLAN',
+  ISHAMIRUGWIRONOLAELLA: 'ISHAMI RUGWIRO NORA ELLA',
+  RUGWIROISHAMINOLAELLA: 'ISHAMI RUGWIRO NORA ELLA',
+  KAYIHURATUYISENGEMORGAN: 'KAYIHURA TUYISENGE MOGHAN',
+  IRINATWETUNEZERWEBRAYAN: 'TUNEZERWE IRINATWE BRAYAN',
+  NIYOMUNEZRO: 'NIYOMUNEZERO SAMUEL',
+  NIYOMUNEZROSAMUEL: 'NIYOMUNEZERO SAMUEL',
+  UWIHIRWEALLIANCE: '__UNMATCHED__',
+  UNKNOWN: '__UNMATCHED__',
+  CYUSAIMENAHENRI: '__UNMATCHED__',
+  CYUSAIMENAHENERKO: '__UNMATCHED__',
+  CYUSAIMENAHENRY: '__UNMATCHED__',
+  GIHOZOPRINCE: '__UNMATCHED__',
+  IGIRUMUFASHAQUEENBLESSING: '__UNMATCHED__',
+  MFURARANGIRAGIAN: 'MFURA RANGIRA GUYANE',
+  ASHIMWEGANZAGUYAN: 'ASHIMWE GANZA GIAN',
+  NTWALILOICHERTIER: 'NTWALI RIOCK HERTIER',
+  IRAKOZEALLIANCERAVINIA: 'IRAKOZE ALLIANCE LAVINIA',
+  UWASESHAMILILOU: 'UWASE SHAMI LELOU',
+  IRAGANJESHEMAKENNY: 'IRAGANJE HIRWA KENNY',
+  INEZADIVINELYAN: '__UNMATCHED__',
+  MUCYOYARSIYASSAH: 'MUCYO YASIRI',
+  MUCYOYARSINYASSAH: 'MUCYO YASIRI',
+  NIYOMUKIZAEMMIMA: 'NIYOMUKIZA EMIMER',
+  NGANJIASHAKENDRIC: 'NGANJI DERCY ASHER KENDRICK',
+  NGANJIDARCYASHA: 'NGANJI DERCY ASHER KENDRICK',
+  IRATABARAYAKINI: 'IRATABARA YACKIN',
+  AGANZEIANENLIQUE: 'AGANZE IAN ENULIQUE',
+  HIRWAERICKSON: 'HIRWA ERCKISON',
+  WISHAVURAANGE: 'WISHAVURA ANGEL',
+  RAMBAELIOGARCIA: 'GALICIA RAMBA ELIO',
+  GANZAIAN: 'GANZE IYAN',
+  KAMIKAZITETAEMMANUELLA: 'KAMIKAZI TETA EMMANUELLA',
+  IGIRANEZARUSI: 'IGIRANEZA RUTH',
+  BENILIGHTCLAUDIA: 'BEN LIGHT CLOADIA',
+};
+
+// ============================================================================
+// CLASS ROSTERS (from the class payment sheets, N1 to P5)
+// ============================================================================
 const CLASS_ROSTERS = [
   // Primary 5 (P5)
   { className: 'P5', name: 'SHIMWA INEZA HOLORE', fatherPhone: '0788859199', motherPhone: '0783301417', materialsPaid: 35000, feesPaid: 0, balance: 71000, uniformPaid: 20000, totalPaid: 55000 },
@@ -355,8 +547,8 @@ const CLASS_ROSTERS = [
   { className: 'N2', name: 'GABIRO LUCKY DIOR', fatherPhone: '0788601155', motherPhone: '0788959098', materialsPaid: 30000, feesPaid: 0, balance: 68000, uniformPaid: 0, totalPaid: 30000 },
   { className: 'N2', name: 'TETA SHILO KUNWDA ANAYA', fatherPhone: '', motherPhone: '0781963965', materialsPaid: 30000, feesPaid: 30000, balance: 38000, uniformPaid: 0, totalPaid: 60000 },
   { className: 'N2', name: 'BEN LIGHT CLOADIA', fatherPhone: '0780768944', motherPhone: '0787562953', materialsPaid: 30000, feesPaid: 61000, balance: 0, uniformPaid: 0, totalPaid: 91000 },
-  { className: 'N2', name: 'NTABWOBA SEZERANO KEILLA', fatherPhone: '0783407117', motherPhone: '0783320216', materialsPaid: 0, feesPaid: 71000, balance: 17000, uniformPaid: 17000, totalPaid: 71000 },
-  { className: 'N2', name: 'RUBERANGEYO IHIRWE GAELLA', fatherPhone: '0788453034', motherPhone: '0783031666', materialsPaid: 0, feesPaid: 45000, balance: 33000, uniformPaid: 10000, totalPaid: 45000 },
+  { className: 'N2', name: 'NTABWOBA SEZERANO KEILLA', fatherPhone: '0783407117', motherPhone: '0783320216', materialsPaid: 0, feesPaid: 71000, balance: 17000, uniformPaid: 0, totalPaid: 71000 },
+  { className: 'N2', name: 'RUBERANGEYO IHIRWE GAELLA', fatherPhone: '0788453034', motherPhone: '0783031666', materialsPaid: 0, feesPaid: 45000, balance: 33000, uniformPaid: 0, totalPaid: 45000 },
   { className: 'N2', name: 'IRAKOZE DESTINE', fatherPhone: '0787113841', motherPhone: '0793226045', materialsPaid: 30000, feesPaid: 18000, balance: 50000, uniformPaid: 32000, totalPaid: 80000 },
   { className: 'N2', name: 'TUYISENGE GANZA BRAYAN', fatherPhone: '0783089006', motherPhone: '0785886009', materialsPaid: 0, feesPaid: 65000, balance: 23000, uniformPaid: 0, totalPaid: 65000 },
   { className: 'N2', name: 'GISA LEE LOGAN', fatherPhone: '0788654465', motherPhone: '0780621905', materialsPaid: 30000, feesPaid: 50000, balance: 18000, uniformPaid: 0, totalPaid: 80000 },
@@ -370,17 +562,45 @@ const CLASS_ROSTERS = [
   { className: 'N2', name: 'IRISA JESCA', fatherPhone: '', motherPhone: '0781662024', materialsPaid: 0, feesPaid: 50000, balance: 38000, uniformPaid: 0, totalPaid: 50000 },
   { className: 'N2', name: 'IRANEZEZA MPANO BRAYAN', fatherPhone: '', motherPhone: '', materialsPaid: 30000, feesPaid: 48000, balance: 20000, uniformPaid: 32000, totalPaid: 110000 },
   { className: 'N2', name: 'GALICIA RAMBA ELIO', fatherPhone: '0782398143', motherPhone: '0784800767', materialsPaid: 30000, feesPaid: 11000, balance: 57000, uniformPaid: 32000, totalPaid: 73000 },
+
+  // Baby Class (N1)
+  { className: 'N1', name: 'IGIHOZO B. BRIELLA', fatherPhone: '0782226877', motherPhone: '0785502845', materialsPaid: 30000, feesPaid: 5000, balance: 95000, uniformPaid: 0, totalPaid: 35000 },
+  { className: 'N1', name: 'GANZA LOGAN DYLAN', fatherPhone: '0782226877', motherPhone: '0785502845', materialsPaid: 30000, feesPaid: 25000, balance: 43000, uniformPaid: 32000, totalPaid: 87000 },
+  { className: 'N1', name: 'IHIRWE MILLA NSENGIYUMVA', fatherPhone: '0795354083', motherPhone: '0781205644', materialsPaid: 30000, feesPaid: 0, balance: 77000, uniformPaid: 23000, totalPaid: 53000 },
+  { className: 'N1', name: 'AGWIZE KABERA AGASARO MIA', fatherPhone: '0781870635', motherPhone: '0784438190', materialsPaid: 30000, feesPaid: 1000, balance: 67000, uniformPaid: 32000, totalPaid: 63000 },
+  { className: 'N1', name: "NIYONGIRA JEAN D'AMOUR", fatherPhone: '0780529292', motherPhone: '', materialsPaid: 30000, feesPaid: 56000, balance: 12000, uniformPaid: 32000, totalPaid: 118000 },
+  { className: 'N1', name: 'NDAGIJIMANA IRAKOZE NICOLE', fatherPhone: '0780453478', motherPhone: '0789281505', materialsPaid: 30000, feesPaid: 43000, balance: 25000, uniformPaid: 32000, totalPaid: 105000 },
+  { className: 'N1', name: 'NSANZINEZA LUCK BERTLA', fatherPhone: '0783150412', motherPhone: '0780578399', materialsPaid: 30000, feesPaid: 0, balance: 85000, uniformPaid: 15000, totalPaid: 45000 },
+  { className: 'N1', name: 'KUNDWA ANDY MALO', fatherPhone: '0783358483', motherPhone: '0780480102', materialsPaid: 0, feesPaid: 0, balance: 117000, uniformPaid: 13000, totalPaid: 13000 },
+  { className: 'N1', name: 'INEZA INGABIRE JESCA', fatherPhone: '0787931442', motherPhone: '0780712571', materialsPaid: 30000, feesPaid: 61000, balance: 7000, uniformPaid: 32000, totalPaid: 123000 },
+  { className: 'N1', name: 'ISHIMWE KEVIN LODRIGO', fatherPhone: '0793695650', motherPhone: '0786237589', materialsPaid: 30000, feesPaid: 52000, balance: 16000, uniformPaid: 32000, totalPaid: 114000 },
+  { className: 'N1', name: 'ABIZERA ELLA GIANA', fatherPhone: '0783607685', motherPhone: '0781163867', materialsPaid: 30000, feesPaid: 0, balance: 70000, uniformPaid: 30000, totalPaid: 60000 },
+  { className: 'N1', name: 'INEZAYIMANA MILLA GABRIELLA', fatherPhone: '0789152980', motherPhone: '0798918340', materialsPaid: 30000, feesPaid: 75000, balance: -7000, uniformPaid: 32000, totalPaid: 137000 },
+  { className: 'N1', name: 'UWIGISUBIZO OLGA JOYCE', fatherPhone: '0789648423', motherPhone: '0795963771', materialsPaid: 30000, feesPaid: 13000, balance: 55000, uniformPaid: 32000, totalPaid: 75000 },
+  { className: 'N1', name: 'NGANJI DERCY ASHER KENDRICK', fatherPhone: '0789285411', motherPhone: '0789213464', materialsPaid: 30000, feesPaid: 71000, balance: -3000, uniformPaid: 32000, totalPaid: 133000 },
+  { className: 'N1', name: 'KAYIHURA TUYISENGE MOGHAN', fatherPhone: '0788449518', motherPhone: '0783372129', materialsPaid: 30000, feesPaid: 0, balance: 100000, uniformPaid: 0, totalPaid: 30000 },
+  { className: 'N1', name: 'UMWALI UWASE KETIA', fatherPhone: '0784149632', motherPhone: '0722822848', materialsPaid: 30000, feesPaid: 0, balance: 97000, uniformPaid: 3000, totalPaid: 33000 },
+  { className: 'N1', name: 'ISHIMWE LOUANGE TRECY', fatherPhone: '0785494534', motherPhone: '0780545083', materialsPaid: 30000, feesPaid: 66000, balance: 2000, uniformPaid: 32000, totalPaid: 128000 },
+  { className: 'N1', name: 'ISHAMI RUGWIRO NORA ELLA', fatherPhone: '0783607685', motherPhone: '0781163867', materialsPaid: 30000, feesPaid: 0, balance: 70000, uniformPaid: 30000, totalPaid: 60000 },
+  { className: 'N1', name: 'AGANZE HAPPY MERCI DAVINA', fatherPhone: '0788472180', motherPhone: '0722682080', materialsPaid: 30000, feesPaid: 0, balance: 80000, uniformPaid: 20000, totalPaid: 50000 },
+  { className: 'N1', name: 'AHIRWE MUGABO JUNIOR', fatherPhone: '0785384180', motherPhone: '0781416732', materialsPaid: 30000, feesPaid: 8000, balance: 60000, uniformPaid: 32000, totalPaid: 70000 },
+  { className: 'N1', name: 'IRAKOZE Beyonce', fatherPhone: '0784260889', motherPhone: '0788275974', materialsPaid: 30000, feesPaid: 0, balance: 68000, uniformPaid: 32000, totalPaid: 62000 },
 ];
 
-const FEMALE_TOKENS = [
-  'MARIE', 'CLAUDETTE', 'CHANCELINE', 'PRECIAS', 'BRITINNY', 'GAELLE', 'GAELL',
-  'ESTHER', 'ESTER', 'OLGA', 'JOICE', 'DAELLA', 'DAELA', 'SANDRA', 'BLENDA',
-  'KESSIA', 'ORNELLA', 'ORNELL', 'NEILLA', 'JESSCA', 'JESSY', 'SABINE', 'NOELLA',
-  'QUEEN', 'CHANELA', 'AVILLA', 'LUNA', 'NICOLE', 'DANIELLA', 'CLOADIA', 'KEILLA',
-  'GAELLA', 'LAVINIA', 'BRIELLA', 'JESCA', 'GIA', 'HOPE', 'BRIANA', 'ISABELLE',
-  'EMMANUELLA', 'KEZA', 'ADELINE', 'VICKY', 'ANGEL', 'RUTH', 'IRIS', 'MIA',
-  'GLORIA', 'JOVIA', 'MEGHAN', 'INEZA', 'SHALLOM', 'LELOU',
-];
+// ============================================================================
+// HELPERS
+// ============================================================================
+const FEMALE_TOKENS = new Set([
+  'MARIE', 'CLAUDETTE', 'CHANCELINE', 'PRECIAS', 'BRITINNY', 'GAELLE', 'GAELL', 'GAELLA',
+  'ESTHER', 'ESTER', 'OLGA', 'JOICE', 'JOYCE', 'DAELLA', 'DAELA', 'SANDRA', 'BLENDA',
+  'KESSIA', 'ORNELLA', 'ORNELL', 'NEILLA', 'NEILA', 'JESSCA', 'JESCA', 'JESSY', 'SABINE',
+  'NOELLA', 'QUEEN', 'CHANELA', 'AVILLA', 'LUNA', 'NICOLE', 'DANIELLA', 'CLOADIA',
+  'KEILLA', 'LAVINIA', 'BRIELLA', 'GIA', 'HOPE', 'BRIANA', 'ISABELLE', 'EMMANUELLA',
+  'KEZA', 'ADELINE', 'VICKY', 'ANGEL', 'RUTH', 'IRIS', 'MIA', 'GLORIA', 'JOVIA',
+  'MEGHAN', 'INEZA', 'SHALLOM', 'LELOU', 'BEYONCE', 'DAVINA', 'KETIA', 'ELLA', 'NORA',
+  'TRECY', 'LOUANGE', 'ASHA', 'DERCY', 'JOY', 'GUYANE', 'GIANA', 'ANAYA', 'TETA',
+  'PRETY', 'UWASE', 'BERTLA',
+]);
 
 function nameParts(full) {
   const parts = String(full || '').trim().split(/\s+/);
@@ -389,10 +609,17 @@ function nameParts(full) {
   return { firstName, lastName };
 }
 
+function nameTokens(s) {
+  return String(s || '')
+    .toUpperCase()
+    .replace(/[’']/g, '')
+    .split(/[^A-Z0-9]+/)
+    .filter((t) => t.length > 1);
+}
+
 function inferGender(name) {
-  const upper = String(name || '').toUpperCase();
-  for (const token of FEMALE_TOKENS) {
-    if (upper.includes(token)) return 'FEMALE';
+  for (const token of nameTokens(name)) {
+    if (FEMALE_TOKENS.has(token)) return 'FEMALE';
   }
   return 'MALE';
 }
@@ -401,6 +628,117 @@ function normalizeKey(s) {
   return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  const dp = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+  }
+  return dp[a.length][b.length];
+}
+
+function tokenEq(a, b) {
+  if (a === b) return true;
+  return Math.min(a.length, b.length) >= 5 && levenshtein(a, b) <= 1;
+}
+
+function matchScore(aTokens, bTokens) {
+  const pool = [...bTokens];
+  let matched = 0;
+  for (const t of aTokens) {
+    const idx = pool.findIndex((p) => tokenEq(t, p));
+    if (idx >= 0) {
+      matched++;
+      pool.splice(idx, 1);
+    }
+  }
+  return matched / Math.max(aTokens.length, bTokens.length, 1);
+}
+
+// Finds the roster record a payment-sheet name belongs to (or null).
+function findRecord(rawName, classHint, rosterIndex) {
+  const key = normalizeKey(rawName);
+  const alias = NAME_ALIASES[key];
+  if (alias === '__UNMATCHED__') return null;
+  const lookupName = alias || rawName;
+  const lookupKey = normalizeKey(lookupName);
+
+  let pool = rosterIndex;
+  if (classHint && CLASS_FEES[classHint]) {
+    const inClass = rosterIndex.filter((r) => r.className === classHint);
+    if (inClass.length) pool = inClass;
+  }
+
+  const exact = pool.filter((r) => r._key === lookupKey);
+  if (exact.length === 1) return exact[0];
+  if (exact.length > 1) return exact[0];
+  if (alias) {
+    const any = rosterIndex.find((r) => r._key === lookupKey);
+    if (any) return any;
+  }
+
+  const tokens = nameTokens(lookupName);
+  const scored = pool
+    .map((r) => ({ r, score: matchScore(tokens, r._tokens) }))
+    .filter((x) => x.score >= 0.6)
+    .sort((a, b) => b.score - a.score);
+  if (!scored.length) return null;
+  if (scored.length > 1 && scored[1].score === scored[0].score) return null;
+  return scored[0].r;
+}
+
+// Splits a student's real transactions across MATERIALS -> SCHOOL_FEES ->
+// UNIFORM so each Payment row carries a true date / channel. Whatever the
+// class sheet says was paid but no transaction explains is recorded using the
+// summary-list channel (or CASH) on a default date, so per-student totals
+// always equal the class sheets.
+function allocatePayments(record, txns, channel, defaultDates) {
+  const queue = [...txns]
+    .sort((a, b) => a.date - b.date)
+    .map((t) => ({ ...t, left: t.amount }));
+  const out = [];
+  const needs = [
+    ['MATERIALS', record.materialsPaid],
+    ['SCHOOL_FEES', record.feesPaid],
+    ['UNIFORM', record.uniformPaid],
+  ];
+  for (const [feeType, total] of needs) {
+    let need = total || 0;
+    for (const q of queue) {
+      if (need <= 0) break;
+      if (q.left <= 0) continue;
+      const take = Math.min(q.left, need);
+      out.push({ feeType, amount: take, method: q.method, date: q.date, payer: q.payer });
+      q.left -= take;
+      need -= take;
+    }
+    if (need > 0) {
+      out.push({
+        feeType,
+        amount: need,
+        method: channel?.method || 'CASH',
+        date: defaultDates[feeType],
+        payer: channel?.payer || '',
+      });
+    }
+  }
+  return out;
+}
+
+function payerLabel(payer) {
+  return String(payer || '').split('(')[0].trim();
+}
+
+// ============================================================================
+// SEED
+// ============================================================================
 async function run() {
   if (!config.mongoUri) {
     console.error('MONGODB_URI is required to seed the database');
@@ -409,47 +747,23 @@ async function run() {
   await mongoose.connect(config.mongoUri);
   console.log('[seed] Connected to MongoDB');
 
-  // --------------------------------------------------------------------------
-  // STEP 1: DELETE EXISTING COLLECTIONS (fresh seed each run)
-  // --------------------------------------------------------------------------
-  console.log('[seed] Clearing existing collections...');
+  // STEP 1: CLEAR EVERYTHING
+  console.log(`[seed] Dropping database "${mongoose.connection.name}" (all existing data)...`);
   await mongoose.connection.dropDatabase();
   console.log('[seed] Database cleared.');
 
-  // --------------------------------------------------------------------------
-  // STEP 2: SEED SYSTEM USERS
-  // --------------------------------------------------------------------------
-  const admin = await User.create({
-    fullName: 'System Administrator',
-    username: 'admin',
-    password: 'admin12345',
-    role: 'SUPER_ADMIN',
-    email: 'admin@school.local',
-  });
-  console.log('[seed] Created super admin -> admin / admin12345');
+  // STEP 2: SYSTEM USERS
+  let admin;
+  for (const u of SYSTEM_USERS) {
+    const created = await User.create(u);
+    if (u.role === 'SUPER_ADMIN') admin = created;
+    console.log(`[seed] Created ${u.role} -> ${u.email}`);
+  }
 
-  await User.create({
-    fullName: 'School Accountant',
-    username: 'accountant',
-    password: 'account12345',
-    role: 'ACCOUNTANT',
-  });
-  console.log('[seed] Created accountant -> accountant / account12345');
-
-  await User.create({
-    fullName: 'Big Boss',
-    username: 'boss',
-    password: 'boss123456',
-    role: 'BIG_BOSS',
-  });
-  console.log('[seed] Created big boss -> boss / boss123456');
-
-  // --------------------------------------------------------------------------
-  // STEP 3: SEED CLASSES & ACADEMIC YEAR
-  // --------------------------------------------------------------------------
+  // STEP 3: CLASSES & ACADEMIC YEAR
   const classIds = {};
   let order = 1;
-  for (const [name, fees] of Object.entries(CLASS_FEES)) {
+  for (const name of Object.keys(CLASS_FEES)) {
     const cls = await SchoolClass.create({
       name,
       level: name.startsWith('N') ? 'NURSERY' : 'PRIMARY',
@@ -458,6 +772,20 @@ async function run() {
     classIds[name] = cls._id;
   }
   console.log('[seed] School classes initialized');
+
+  // Teachers (class-reader of one class + subject assignments across classes)
+  for (const t of TEACHERS) {
+    await User.create({
+      fullName: t.fullName,
+      username: t.username,
+      email: t.email,
+      password: t.password,
+      role: 'TEACHER',
+      classTeacherOf: classIds[t.homeroom],
+      teachingAssignments: t.assignments.map((a) => ({ class: classIds[a.class], subject: a.subject })),
+    });
+    console.log(`[seed] Created TEACHER -> ${t.username} (class-reader ${t.homeroom})`);
+  }
 
   const year = await AcademicYear.create({
     name: '2026-2027',
@@ -472,11 +800,8 @@ async function run() {
   });
   console.log('[seed] Academic year 2026-2027 initialized');
 
-  // --------------------------------------------------------------------------
-  // STEP 4: SEED FEE STRUCTURES & ITEMS
-  // --------------------------------------------------------------------------
-  const terms = ['Term 1', 'Term 2', 'Term 3'];
-  for (const term of terms) {
+  // STEP 4: FEE STRUCTURES & ITEMS
+  for (const term of ['Term 1', 'Term 2', 'Term 3']) {
     for (const [name, fees] of Object.entries(CLASS_FEES)) {
       const entries = [
         ['SCHOOL_FEES', fees.school],
@@ -508,37 +833,17 @@ async function run() {
       order: 1,
     });
   }
-  const UNIFORM_FEE_ITEMS = [
-    { name: 'Uniform Ikabutura', price: 8000 },
-    { name: 'Uniform Ijipo', price: 8000 },
-    { name: 'Uniform Ishati', price: 7000 },
-    { name: 'Sport Ikabutura', price: 5000 },
-    { name: 'Sport Umupira', price: 3000 },
-    { name: 'Socks Uniform', price: 1000 },
-    { name: 'Socks Sport', price: 500 },
-    { name: 'Umupira', price: 10000 },
-  ];
   for (const [i, u] of UNIFORM_FEE_ITEMS.entries()) {
     await FeeItem.create({ category: 'UNIFORM', name: u.name, price: u.price, order: i + 1 });
   }
   console.log('[seed] Fee items ready');
 
-  // --------------------------------------------------------------------------
-  // STEP 5: SEED UNIFORM INVENTORY (UPDATED FROM REPORT)
-  // --------------------------------------------------------------------------
-  const UNIFORM_STOCK = [
-    { name: 'Uniform Ikabutura', received: 48, sold: 16, returned: 23, inStock: 9, price: 8000 },
-    { name: 'Uniform Ijipo', received: 47, sold: 44, returned: 2, inStock: 1, price: 8000 },
-    { name: 'Uniform Ishati', received: 61, sold: 46, returned: 7, inStock: 8, price: 7000 },
-    { name: 'Sport Ikabutura', received: 61, sold: 38, returned: 14, inStock: 9, price: 5000 },
-    { name: 'Sport Umupira', received: 41, sold: 23, returned: 8, inStock: 10, price: 3000 },
-    { name: 'Socks Uniform', received: 55, sold: 46, returned: 0, inStock: 9, price: 1000 },
-    { name: 'Socks Sport', received: 66, sold: 48, returned: 0, inStock: 18, price: 500 },
-    { name: 'Umupira', received: 56, sold: 51, returned: 0, inStock: 5, price: 10000 },
-  ];
-
-  for (const s of UNIFORM_STOCK) {
+  // STEP 5: UNIFORM STOCK (dated deliveries per the 08/10/2026 report)
+  for (const [idx, s] of UNIFORM_STOCK.entries()) {
     const quantityIssued = s.sold + s.returned;
+    if (s.received - quantityIssued !== s.inStock) {
+      console.warn(`[seed] WARNING stock mismatch for ${s.name}: ${s.received} - ${quantityIssued} != ${s.inStock}`);
+    }
     const item = await UniformItem.create({
       name: s.name,
       gender: 'UNISEX',
@@ -550,21 +855,68 @@ async function run() {
       unitCost: Math.round(s.price * 0.6),
       status: 'ACTIVE',
     });
-    await UniformStockTransaction.create({
-      uniformItem: item._id,
-      type: 'RECEIVED',
-      quantity: s.received,
-      balanceAfter: s.received - quantityIssued,
-      date: new Date('2026-09-01'),
-      reason: 'Seed: opening stock per L.P.A Rulindo ledger',
-      performedBy: admin._id,
-    });
-  }
-  console.log('[seed] Uniform stock ledger loaded');
 
-  // --------------------------------------------------------------------------
-  // STEP 6: SEED OTHER INVENTORY & SETTINGS
-  // --------------------------------------------------------------------------
+    const deliveries = STOCK_DELIVERIES
+      .map((d) => ({ date: d.date, label: d.label || 'Delivery', qty: d.qty[idx] }))
+      .filter((d) => d.qty > 0);
+    const dated = deliveries.reduce((sum, d) => sum + d.qty, 0);
+    if (dated < s.received) {
+      deliveries.push({
+        date: '2026-10-08',
+        label: 'Reconciliation to report total',
+        qty: s.received - dated,
+      });
+    }
+
+    // Movements in order: dated deliveries, then (dated at the report date)
+    // sales and the items sent back to the supplier. Running balance ends at
+    // the "in stock" figure of the report.
+    const REPORT_DATE = '2026-10-08';
+    const movements = deliveries.map((d) => ({
+      type: 'RECEIVED',
+      qty: d.qty,
+      sign: 1,
+      date: d.date,
+      reason: `${d.label} - L.P.A Rulindo stock report`,
+    }));
+    if (s.sold > 0) {
+      movements.push({
+        type: 'ISSUED',
+        qty: s.sold,
+        sign: -1,
+        date: REPORT_DATE,
+        reason: 'Sold to students (IMYENDA YAGURISHIJWE) - L.P.A Rulindo stock report',
+      });
+    }
+    if (s.returned > 0) {
+      // "Imyenda yasubiyeyo": taken out of stock (stock goes DOWN), so it is
+      // stored as ADJUSTMENT rather than RETURNED to avoid being read as +stock.
+      movements.push({
+        type: 'ADJUSTMENT',
+        qty: s.returned,
+        sign: -1,
+        date: REPORT_DATE,
+        reason: 'Returned out of stock (IMYENDA YASUBIYEYO) - L.P.A Rulindo stock report',
+      });
+    }
+
+    let running = 0;
+    for (const m of movements) {
+      running += m.sign * m.qty;
+      await UniformStockTransaction.create({
+        uniformItem: item._id,
+        type: m.type,
+        quantity: m.qty,
+        balanceAfter: running,
+        date: new Date(m.date),
+        reason: `Seed: ${m.reason}`,
+        performedBy: admin._id,
+      });
+    }
+  }
+  console.log('[seed] Uniform stock ledger loaded (deliveries, sales, returns)');
+
+  // STEP 6: OTHER INVENTORY & SETTINGS
   await InventoryItem.create([
     { name: 'Kawunga', category: 'FOOD', unit: 'Bags', openingStock: 10, currentStock: 10, minimumStockLevel: 5, unitCost: 12000 },
     { name: 'Exercise Books', category: 'SCHOOL_BOOKS', unit: 'Pieces', openingStock: 500, currentStock: 500, minimumStockLevel: 100, unitCost: 300 },
@@ -586,29 +938,60 @@ async function run() {
   }
   console.log('[seed] System settings loaded');
 
-  // --------------------------------------------------------------------------
-  // STEP 7: SEED STUDENTS (CLASS ROSTERS) AND PER-STUDENT FEE PAYMENTS
-  // --------------------------------------------------------------------------
+  // STEP 7: STUDENTS + PAYMENTS
   const DEFAULT_DATES = {
     MATERIALS: new Date('2026-09-03'),
     SCHOOL_FEES: new Date('2026-09-07'),
     UNIFORM: new Date('2026-09-30'),
   };
 
-  const momoIndex = new Map();
+  const rosterIndex = CLASS_ROSTERS.map((r) => ({
+    ...r,
+    _key: normalizeKey(r.name),
+    _tokens: nameTokens(r.name),
+  }));
+
+  const txnsByRecord = new Map();
+  const addTxn = (record, txn) => {
+    if (!txnsByRecord.has(record)) txnsByRecord.set(record, []);
+    txnsByRecord.get(record).push(txn);
+  };
+  const unmatched = [];
+
   for (const p of MOMO_PAYMENTS) {
-    const k = normalizeKey(p.studentName);
-    if (k && !momoIndex.has(k)) momoIndex.set(k, { method: 'MOBILE_MONEY', date: new Date(p.date), payer: p.payerName });
+    const record = findRecord(p.studentName, '', rosterIndex);
+    if (!record) {
+      unmatched.push(`MoMo ${p.date} ${p.studentName} ${p.amount}`);
+      continue;
+    }
+    addTxn(record, {
+      method: /CASH/i.test(p.payerName) ? 'BANK' : 'MOBILE_MONEY',
+      date: new Date(p.date),
+      amount: p.amount,
+      payer: payerLabel(p.payerName),
+    });
   }
-  const equityIndex = new Map();
   for (const p of EQUITY_PAYMENTS) {
-    const k = normalizeKey(p.studentName);
-    if (k && !equityIndex.has(k)) equityIndex.set(k, { method: 'BANK', date: new Date(p.date), payer: '' });
+    const record = findRecord(p.studentName, p.className, rosterIndex);
+    if (!record) {
+      unmatched.push(`Equity ${p.date} ${p.studentName} ${p.amount}`);
+      continue;
+    }
+    addTxn(record, { method: 'BANK', date: new Date(p.date), amount: p.amount, payer: '' });
   }
 
+  const channelByRecord = new Map();
+  for (const c of PAYMENT_CHANNELS) {
+    const record = findRecord(c.name, c.className, rosterIndex);
+    if (record) channelByRecord.set(record, c);
+    else unmatched.push(`Channel list ${c.name}`);
+  }
+
+  const receiptPrefix = await Setting.get('receipt_prefix', 'RCT');
   const uniformPayments = [];
   let paymentCount = 0;
-  for (const record of CLASS_ROSTERS) {
+
+  for (const record of rosterIndex) {
     const { firstName, lastName } = nameParts(record.name);
     const student = await Student.create({
       studentId: `STU-2026-${pad(await nextSequence('student'), 4)}`,
@@ -623,37 +1006,39 @@ async function run() {
       status: 'ACTIVE',
     });
 
-    const key = normalizeKey(record.name);
-    const entries = [
-      ['MATERIALS', record.materialsPaid],
-      ['SCHOOL_FEES', record.feesPaid],
-      ['UNIFORM', record.uniformPaid],
-    ];
-    for (const [feeType, amount] of entries) {
-      if (!amount || amount <= 0) continue;
-      const source = momoIndex.get(key) || equityIndex.get(key) || { method: 'CASH', date: DEFAULT_DATES[feeType], payer: '' };
+    const plan = allocatePayments(
+      record,
+      txnsByRecord.get(record) || [],
+      channelByRecord.get(record),
+      DEFAULT_DATES,
+    );
+
+    for (const item of plan) {
+      if (item.amount <= 0) continue;
       const payment = await Payment.create({
-        receiptNumber: `${await Setting.get('receipt_prefix', 'RCT')}-${source.date.getFullYear()}-${pad(await nextSequence('receipt'), 6)}`,
+        receiptNumber: `${receiptPrefix}-${item.date.getFullYear()}-${pad(await nextSequence('receipt'), 6)}`,
         student: student._id,
         academicYear: year._id,
         term: 'Term 1',
-        feeType,
-        amount,
-        paymentMethod: source.method,
-        paymentDate: source.date,
+        feeType: item.feeType,
+        amount: item.amount,
+        paymentMethod: item.method,
+        paymentDate: item.date,
         recordedBy: admin._id,
         status: 'ACTIVE',
-        note: source.payer ? `Payer: ${source.payer.split('(')[0].trim()}` : '',
+        note: item.payer ? `Payer: ${item.payer}` : '',
       });
-      if (feeType === 'UNIFORM') uniformPayments.push(payment);
+      if (item.feeType === 'UNIFORM') uniformPayments.push(payment);
       paymentCount++;
     }
   }
-  console.log(`[seed] Loaded ${CLASS_ROSTERS.length} students and ${paymentCount} payments`);
+  console.log(`[seed] Loaded ${rosterIndex.length} students and ${paymentCount} payments`);
+  if (unmatched.length) {
+    console.log(`[seed] ${unmatched.length} payment lines could not be tied to a student (kept out of the totals):`);
+    unmatched.forEach((u) => console.log(`        - ${u}`));
+  }
 
-  // --------------------------------------------------------------------------
-  // STEP 8: SYNC UNIFORM ENTITLEMENTS FROM UNIFORM PAYMENTS
-  // --------------------------------------------------------------------------
+  // STEP 8: UNIFORM ENTITLEMENTS
   let entitlementCount = 0;
   for (const payment of uniformPayments) {
     const student = await Student.findById(payment.student);

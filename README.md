@@ -7,7 +7,7 @@ trail, and role-based access control.
 - **Frontend:** React (Vite) + Tailwind CSS 4 + React Router
 - **Backend:** Node.js + Express + MongoDB (Mongoose)
 - **Auth:** JWT (HTTP-only via Bearer header, stored in `localStorage` as `sms_token`) + bcrypt
-- **Roles:** `SUPER_ADMIN`, `ACCOUNTANT`, `BIG_BOSS` (permissions are enforced **server-side**)
+- **Roles:** `SUPER_ADMIN`, `ACCOUNTANT`, `BIG_BOSS`, `TEACHER` (permissions are enforced **server-side**)
 
 ```
 ┌─ frontend/  React SPA (Vite) ── /api proxy ─┐
@@ -48,6 +48,8 @@ npm run dev                 # http://localhost:5000
 | `admin`    | `admin12345`  | SUPER_ADMIN   |
 | `accountant` | `account12345` | ACCOUNTANT  |
 | `boss`     | `boss123456`  | BIG_BOSS      |
+| `teacher.alice` | `teacher12345` | TEACHER (class-reader P5) |
+| `teacher.jean` | `teacher12345` | TEACHER (class-reader P1) |
 
 > Change these after first login (Profile → Change Password).
 
@@ -80,6 +82,16 @@ If the API is hosted elsewhere, set `VITE_API_URL` to its base URL (without `/ap
 7. **Reports** → collections, breakdown, outstanding balances, student statements, inventory,
    uniforms, fee structures — all exportable to PDF and Excel.
 8. **Receipts** → printable shareable receipt, plus jsPDF export.
+9. **Teaching (Teachers)** → created by the Super Admin (Users module → role **Teacher**). Each
+   teacher is the **class reader** of exactly one class, but may teach many class/subject
+   combinations (KIN, KIS, ENG, FRA, MAT, SRS, SET).
+   - **Attendance** → daily roster for the teacher's class-reader class only. Any student marked
+     `ABSENT` **must** have a reason; future dates are rejected.
+   - **Assessments** → create an assessment (e.g. 40 marks) for a subject the teacher teaches,
+     enter marks for the class roster, then generate a report. Every mark is validated as a whole
+     number within `0 … total` (zero tolerance for "worked"/out-of-range marks).
+   - **Performance Report** → overall pass/fail/percentage/position across all of a class's
+     assessments (pass mark defaults to 50%).
 
 ## 4. API overview
 

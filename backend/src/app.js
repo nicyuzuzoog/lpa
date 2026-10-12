@@ -20,6 +20,7 @@ import notificationRoutes from './routes/notifications.js';
 import auditRoutes from './routes/auditLogs.js';
 import settingRoutes from './routes/settings.js';
 import dashboardRoutes from './routes/dashboard.js';
+import teachingRoutes from './routes/teaching.js';
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/teaching', teachingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
