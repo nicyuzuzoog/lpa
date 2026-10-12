@@ -3,6 +3,7 @@ import { get, post, put } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { money, formatDate, statusColor } from '../utils/format.js';
+import { isPositive, isNonNegative, isIntInRange, isFutureDate } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar, StatCard } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal, ConfirmDialog } from '../components/Modal.jsx';
@@ -61,7 +62,8 @@ export default function Inventory() {
   const saveItem = async (e) => {
     e.preventDefault();
     if (!itemForm.name.trim() || !itemForm.unit.trim()) return toast.error('Item name and unit are required');
-    if (Number(itemForm.openingStock) < 0 || Number(itemForm.minimumStockLevel) < 0 || Number(itemForm.unitCost) < 0) return toast.error('Stock quantities and unit cost cannot be negative');
+    if (!isNonNegative(itemForm.openingStock) || !isNonNegative(itemForm.minimumStockLevel) || !isNonNegative(itemForm.unitCost)) return toast.error('Stock quantities and unit cost cannot be negative');
+    if (!isIntInRange(itemForm.openingStock, 0) || !isIntInRange(itemForm.minimumStockLevel, 0)) return toast.error('Stock quantities must be whole numbers');
     setSaving(true);
     try {
       if (modal === 'edit') {
@@ -82,7 +84,12 @@ export default function Inventory() {
 
   const submitStock = async (e) => {
     e.preventDefault();
-    if (!stockForm.quantity || Number(stockForm.quantity) <= 0) return toast.error('Enter a valid quantity greater than 0');
+    if (!isPositive(stockForm.quantity)) return toast.error('Enter a valid quantity greater than 0');
+    if (!isIntInRange(stockForm.quantity, 1)) return toast.error('Quantity must be a whole number');
+    if (['ISSUED', 'DAMAGED', 'LOST'].includes(stockForm.type) && Number(stockForm.quantity) > (stockTarget?.currentStock || 0)) {
+      return toast.error(`Only ${stockTarget?.currentStock || 0} ${stockTarget?.unit || 'units'} in stock`);
+    }
+    if (isFutureDate(stockForm.date)) return toast.error('Transaction date cannot be in the future');
     setSaving(true);
     try {
       await post(`/inventory/items/${stockTarget._id}/transactions`, {
@@ -104,13 +111,14 @@ export default function Inventory() {
 
   const submitAdjust = async (e) => {
     e.preventDefault();
-    if (adjustForm.newStock === '' || Number.isNaN(Number(adjustForm.newStock)) || Number(adjustForm.newStock) < 0) return toast.error('Enter a valid new stock quantity (0 or more)');
+    if (!isIntInRange(adjustForm.newStock, 0)) return toast.error('Enter a valid new stock quantity (whole number, 0 or more)');
+    if (!adjustForm.reason || !adjustForm.reason.trim()) return toast.error('A reason is required for a stock adjustment');
     setSaving(true);
     try {
       await post(`/inventory/items/${stockTarget._id}/transactions`, {
         type: 'ADJUSTMENT',
         newStock: Number(adjustForm.newStock),
-        reason: adjustForm.reason || 'Stock adjustment',
+        reason: adjustForm.reason.trim(),
       });
       toast.success('Stock adjusted');
       setModal(null);

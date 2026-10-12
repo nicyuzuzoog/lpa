@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { money, formatDate, statusColor } from '../utils/format.js';
 import { exportPdf, exportExcel, moneyFormat } from '../utils/export.js';
+import { isPositive, isNonNegative, isIntInRange } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar, StatCard } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal } from '../components/Modal.jsx';
@@ -129,6 +130,8 @@ export default function Uniforms() {
     if (!issueStudent) return toast.error('Select a student');
     const selected = issueItems.filter((i) => Number(i.qty) > 0);
     if (!selected.length) return toast.error('Select at least one item');
+    const badQty = selected.find((i) => !isIntInRange(i.qty, 1));
+    if (badQty) return toast.error(`Enter a whole number quantity for ${badQty.name}`);
     const over = selected.find((i) => Number(i.qty) > i.remaining);
     if (over) return toast.error(`Only ${over.remaining} in stock for ${over.name}`);
     setSaving(true);
@@ -151,8 +154,11 @@ export default function Uniforms() {
   const saveItem = async (e) => {
     e.preventDefault();
     if (!itemForm.name.trim()) return toast.error('Item name is required');
-    if (!itemForm.price || Number(itemForm.price) <= 0) return toast.error('Enter a valid price greater than 0');
-    if (Number(itemForm.minimumStockLevel) < 0 || Number(itemForm.quantityReceived) < 0 || Number(itemForm.unitCost) < 0) return toast.error('Quantities and costs cannot be negative');
+    if (!itemForm.gender) return toast.error('Select a gender');
+    if (!isPositive(itemForm.price)) return toast.error('Enter a valid price greater than 0');
+    if (!isIntInRange(itemForm.price, 1)) return toast.error('Price must be a whole number');
+    if (!isNonNegative(itemForm.minimumStockLevel) || !isNonNegative(itemForm.quantityReceived) || !isNonNegative(itemForm.unitCost)) return toast.error('Quantities and costs cannot be negative');
+    if (!isIntInRange(itemForm.minimumStockLevel, 0) || !isIntInRange(itemForm.quantityReceived, 0)) return toast.error('Quantities must be whole numbers');
     setSaving(true);
     try {
       if (itemEdit) {
@@ -173,7 +179,11 @@ export default function Uniforms() {
 
   const submitStock = async (e) => {
     e.preventDefault();
-    if (!stockForm.quantity || Number(stockForm.quantity) <= 0) return toast.error('Enter a valid quantity greater than 0');
+    if (!isPositive(stockForm.quantity)) return toast.error('Enter a valid quantity greater than 0');
+    if (!isIntInRange(stockForm.quantity, 1)) return toast.error('Quantity must be a whole number');
+    if (stockForm.type !== 'RECEIVED' && Number(stockForm.quantity) > (stockTarget?.quantityRemaining || 0)) {
+      return toast.error(`Only ${stockTarget?.quantityRemaining || 0} remaining`);
+    }
     setSaving(true);
     try {
       await post(`/uniforms/items/${stockTarget._id}/transactions`, { type: stockForm.type, quantity: Number(stockForm.quantity), reason: stockForm.reason });

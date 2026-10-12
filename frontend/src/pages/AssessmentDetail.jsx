@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { formatDate } from '../utils/format.js';
 import { subjectLabel } from '../utils/subjects.js';
 import { exportPdf, exportExcel } from '../utils/export.js';
+import { isBlank, isIntInRange } from '../utils/validate.js';
 import { PageHeader, Spinner, StatCard, Badge, EmptyState } from '../components/ui.jsx';
 import { Modal } from '../components/Modal.jsx';
 import { Button, Field, Input } from '../components/Fields.jsx';
@@ -115,11 +116,17 @@ export default function AssessmentDetail() {
 
   const saveEdit = async (e) => {
     e.preventDefault();
+    if (isBlank(editForm.title)) return toast.error('Assessment title is required');
+    if (!isIntInRange(editForm.maxMarks, 1, 100)) return toast.error('Total marks must be a whole number 1–100');
+    const max = Number(editForm.maxMarks);
+    if (editForm.passMark !== '' && editForm.passMark != null && !isIntInRange(editForm.passMark, 0, max)) {
+      return toast.error('Pass mark must be a whole number between 0 and the total marks');
+    }
     setBusy(true);
     try {
       await put(`/teaching/assessments/${id}`, {
-        title: editForm.title,
-        maxMarks: Number(editForm.maxMarks),
+        title: editForm.title.trim(),
+        maxMarks: max,
         passMark: editForm.passMark === '' ? null : Number(editForm.passMark),
       });
       toast.success('Assessment updated');

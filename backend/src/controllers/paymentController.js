@@ -200,7 +200,7 @@ export const getReceipt = asyncHandler(async (req, res) => {
   const summary = await getStudentFeeSummary(student, { feeType: doc.feeType });
 
   const settings = {
-    schoolName: (await Setting.get('school_name', 'Greenfield School')) || 'Greenfield School',
+    schoolName: (await Setting.get('school_name', 'Light Peace Academy')) || 'Light Peace Academy',
     schoolLogo: (await Setting.get('school_logo', '')) || '',
     schoolAddress: (await Setting.get('school_address', '')) || '',
     schoolPhone: (await Setting.get('school_phone', '')) || '',

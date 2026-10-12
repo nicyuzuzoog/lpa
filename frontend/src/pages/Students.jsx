@@ -4,6 +4,7 @@ import { get, post, put } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { formatDate, statusColor } from '../utils/format.js';
+import { isPhone, isPlausibleDob } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal } from '../components/Modal.jsx';
@@ -86,9 +87,12 @@ export default function Students() {
   const save = async (e) => {
     e.preventDefault();
     if (!form.firstName.trim() || !form.lastName.trim()) return toast.error('First and last name are required');
+    if (form.firstName.trim().length < 2 || form.lastName.trim().length < 2) return toast.error('Names must be at least 2 characters');
     if (!form.class || !form.academicYear || !form.term) return toast.error('Class, academic year and term are required');
-    if (form.motherPhone && !/^[0-9+\s-]{7,}$/.test(form.motherPhone.trim())) return toast.error('Enter a valid phone number');
-    if (form.fatherPhone && !/^[0-9+\s-]{7,}$/.test(form.fatherPhone.trim())) return toast.error('Enter a valid phone number');
+    if (!form.gender) return toast.error('Select a gender');
+    if (form.dateOfBirth && !isPlausibleDob(form.dateOfBirth)) return toast.error('Enter a valid date of birth (not in the future)');
+    if (!isPhone(form.motherPhone)) return toast.error('Enter a valid mother phone number');
+    if (!isPhone(form.fatherPhone)) return toast.error('Enter a valid father phone number');
     setSaving(true);
     try {
       if (editing) {

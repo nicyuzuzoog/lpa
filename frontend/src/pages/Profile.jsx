@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import { roleLabel, formatDateTime } from '../utils/format.js';
 import { PageHeader } from '../components/ui.jsx';
 import { Button, Field, PasswordInput } from '../components/Fields.jsx';
+import { isStrongPassword } from '../utils/validate.js';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -16,7 +17,8 @@ export default function Profile() {
     e.preventDefault();
     if (!pf.currentPassword || !pf.newPassword || !pf.confirmPassword) return toast.error('Fill in all fields');
     if (pf.newPassword !== pf.confirmPassword) return toast.error('New passwords do not match');
-    if (pf.newPassword.length < 8) return toast.error('Password must be at least 8 characters');
+    if (!isStrongPassword(pf.newPassword)) return toast.error('Password must be at least 8 characters and include a letter and a number');
+    if (pf.newPassword === pf.currentPassword) return toast.error('New password must be different from the current one');
     setSaving(true);
     try {
       await post('/auth/change-password', { currentPassword: pf.currentPassword, newPassword: pf.newPassword });

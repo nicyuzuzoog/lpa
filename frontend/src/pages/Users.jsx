@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { formatDateTime, roleLabel, statusColor } from '../utils/format.js';
 import { SUBJECTS, subjectLabel } from '../utils/subjects.js';
+import { isEmail, isValidUsername, isStrongPassword } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal } from '../components/Modal.jsx';
@@ -114,9 +115,12 @@ export default function Users() {
   const save = async (e) => {
     e.preventDefault();
     if (!form.fullName.trim() || !form.username.trim()) return toast.error('Full name and username are required');
+    if (form.fullName.trim().length < 3) return toast.error('Full name must be at least 3 characters');
+    if (!isValidUsername(form.username)) return toast.error('Username must be 3–30 characters: letters, numbers, dot, dash or underscore');
     if (!editing && !form.password) return toast.error('Password is required');
-    if (form.password && form.password.length < 8) return toast.error('Password must be at least 8 characters');
-    if (form.email && (!form.email.includes('@') || !form.email.includes('.'))) return toast.error('Enter a valid email address');
+    if (form.password && !isStrongPassword(form.password)) return toast.error('Password must be at least 8 characters and include a letter and a number');
+    if (!isEmail(form.email)) return toast.error('Enter a valid email address');
+    if (!form.role) return toast.error('Select a role');
 
     const teaching = teacherPayload();
     if (teaching === null) return;

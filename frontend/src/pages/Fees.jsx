@@ -3,6 +3,7 @@ import { get, post, put, apiDelete } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { money, statusColor, feeTypeLabel } from '../utils/format.js';
+import { isPositive, isIntInRange } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar, StatCard } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal } from '../components/Modal.jsx';
@@ -82,7 +83,9 @@ export default function Fees() {
   const saveStructure = async (e) => {
     e.preventDefault();
     if (!structForm.academicYear || !structForm.term || !structForm.class) return toast.error('Year, term and class are required');
-    if (!structForm.requiredAmount || Number(structForm.requiredAmount) <= 0) return toast.error('Enter a valid required amount greater than 0');
+    if (!structForm.feeType) return toast.error('Select a fee type');
+    if (!isPositive(structForm.requiredAmount)) return toast.error('Enter a valid required amount greater than 0');
+    if (!isIntInRange(structForm.requiredAmount, 1)) return toast.error('Required amount must be a whole number');
     setSaving(true);
     try {
       if (modal?.type === 'structure-edit') {
@@ -104,7 +107,9 @@ export default function Fees() {
   const saveItem = async (e) => {
     e.preventDefault();
     if (!itemForm.name.trim()) return toast.error('Item name is required');
-    if (!itemForm.price || Number(itemForm.price) <= 0) return toast.error('Enter a valid price greater than 0');
+    if (!itemForm.category) return toast.error('Select a category');
+    if (!isPositive(itemForm.price)) return toast.error('Enter a valid price greater than 0');
+    if (!isIntInRange(itemForm.price, 1)) return toast.error('Price must be a whole number');
     setSaving(true);
     try {
       if (modal?.type === 'item-edit') {

@@ -3,6 +3,7 @@ import { get, post, put, apiDelete } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { statusColor } from '../utils/format.js';
+import { isIntInRange } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal } from '../components/Modal.jsx';
@@ -45,7 +46,7 @@ export default function Classes() {
   const save = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error('Class name is required');
-    if (Number(form.order) < 0 || Number.isNaN(Number(form.order))) return toast.error('Enter a valid display order (0 or more)');
+    if (!isIntInRange(form.order, 0, 999)) return toast.error('Enter a valid whole-number display order (0 or more)');
     setSaving(true);
     try {
       if (modal === 'create') {

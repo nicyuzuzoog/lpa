@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { PageHeader, Spinner, StatCard, EmptyState, Badge } from '../components/ui.jsx';
 import { Button, Input, Select, Field } from '../components/Fields.jsx';
 import { statusColor } from '../utils/format.js';
+import { isFutureDate } from '../utils/validate.js';
 
 const STATUSES = ['PRESENT', 'ABSENT', 'LATE'];
 
@@ -82,6 +83,8 @@ export default function Attendance() {
 
   const save = async () => {
     if (!classId) return toast.error('Select a class');
+    if (!date) return toast.error('Select a date');
+    if (isFutureDate(date)) return toast.error('Attendance cannot be recorded for a future date');
     if (!rows.length) return toast.error('No students to mark');
     if (rows.some((r) => !r.status)) return toast.error('Please mark every student before saving');
     if (rows.some((r) => r.status === 'ABSENT' && r.reason.trim().length < 3)) {

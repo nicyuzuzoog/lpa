@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { PageHeader, Spinner } from '../components/ui.jsx';
 import { Button, Field, Input, Textarea } from '../components/Fields.jsx';
+import { isEmail, isPhone } from '../utils/validate.js';
 
-const IP = ['school_name', 'school_address', 'school_phone', 'school_email', 'receipt_prefix', 'currency'];
+const IP = ['school_name', 'school_address', 'school_phone', 'school_email', 'receipt_prefix', 'currency', 'school_logo'];
 
 export default function Settings() {
   const { can } = useAuth();
@@ -28,8 +29,10 @@ export default function Settings() {
   const save = async (e) => {
     e.preventDefault();
     if (!String(form.school_name || '').trim()) return toast.error('School name is required');
-    if (form.school_email && (!String(form.school_email).includes('@') || !String(form.school_email).includes('.'))) return toast.error('Enter a valid email address');
-    if (form.school_phone && !/^[0-9+\s-]{7,}$/.test(String(form.school_phone).trim())) return toast.error('Enter a valid phone number');
+    if (!isEmail(form.school_email)) return toast.error('Enter a valid email address');
+    if (!isPhone(form.school_phone)) return toast.error('Enter a valid phone number');
+    if (form.currency && !/^[A-Za-z]{3}$/.test(String(form.currency).trim())) return toast.error('Currency must be a 3-letter code (e.g. RWF)');
+    if (form.receipt_prefix && !/^[A-Za-z0-9-]{1,6}$/.test(String(form.receipt_prefix).trim())) return toast.error('Receipt prefix must be 1–6 letters/numbers');
     setSaving(true);
     try {
       const payload = {};
@@ -54,7 +57,7 @@ export default function Settings() {
 
       <form onSubmit={save} className="max-w-2xl space-y-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
         <Field label="School Name" required>
-          <Input value={form.school_name || ''} onChange={(e) => setForm({ ...form, school_name: e.target.value })} placeholder="e.g. Greenfield Academy" />
+          <Input value={form.school_name || ''} onChange={(e) => setForm({ ...form, school_name: e.target.value })} placeholder="e.g. Light Peace Academy" />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Address">
@@ -64,7 +67,7 @@ export default function Settings() {
             <Input value={form.school_phone || ''} onChange={(e) => setForm({ ...form, school_phone: e.target.value })} placeholder="e.g. 0781234567" />
           </Field>
           <Field label="Email">
-            <Input value={form.school_email || ''} onChange={(e) => setForm({ ...form, school_email: e.target.value })} placeholder="e.g. info@greenfield.ac.rw" />
+            <Input value={form.school_email || ''} onChange={(e) => setForm({ ...form, school_email: e.target.value })} placeholder="e.g. info@lightpeace.ac.rw" />
           </Field>
           <Field label="Currency">
             <Input value={form.currency || 'RWF'} onChange={(e) => setForm({ ...form, currency: e.target.value })} placeholder="e.g. RWF" />

@@ -4,6 +4,7 @@ import { get, post, put } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { money, formatDate, statusColor, feeTypeLabel, paymentMethodLabel } from '../utils/format.js';
+import { isPositive, isIntInRange, isFutureDate } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal, ConfirmDialog } from '../components/Modal.jsx';
@@ -175,7 +176,11 @@ export default function Payments() {
   const save = async (e) => {
     e.preventDefault();
     if (!form.student) return toast.error('Select a student');
-    if (!form.amount || Number(form.amount) <= 0) return toast.error('Enter a valid payment amount');
+    if (!form.feeType) return toast.error('Select a fee type');
+    if (!form.paymentMethod) return toast.error('Select a payment method');
+    if (!isPositive(form.amount)) return toast.error('Enter a valid payment amount greater than 0');
+    if (!isIntInRange(form.amount, 1)) return toast.error('Payment amount must be a whole number');
+    if (isFutureDate(form.paymentDate)) return toast.error('Payment date cannot be in the future');
     setSaving(true);
     try {
       const d = await post('/payments', { ...form, amount: Number(form.amount) });
@@ -191,6 +196,10 @@ export default function Payments() {
 
   const doEdit = async (e) => {
     e.preventDefault();
+    if (!form.reason || !form.reason.trim()) return toast.error('A reason is required to correct a payment');
+    if (!isPositive(form.amount)) return toast.error('Enter a valid payment amount greater than 0');
+    if (!isIntInRange(form.amount, 1)) return toast.error('Payment amount must be a whole number');
+    if (isFutureDate(form.paymentDate)) return toast.error('Payment date cannot be in the future');
     setSaving(true);
     try {
       const d = await put(`/payments/${modal._id}`, { reason: form.reason, amount: Number(form.amount), paymentMethod: form.paymentMethod, paymentDate: form.paymentDate, note: form.note });

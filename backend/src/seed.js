@@ -925,10 +925,10 @@ async function run() {
   ]);
 
   const defaults = {
-    school_name: 'L.P.A RULINDO',
+    school_name: 'Light Peace Academy',
     school_address: 'Rulindo, Northern Province, Rwanda',
     school_phone: '+250 788 000 000',
-    school_email: 'info@lparulindo.ac.rw',
+    school_email: 'info@lightpeace.ac.rw',
     currency: 'RWF',
     receipt_prefix: 'RCT',
     school_logo: '',
