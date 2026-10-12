@@ -9,6 +9,39 @@ import { isFutureDate } from '../utils/validate.js';
 
 const STATUSES = ['PRESENT', 'ABSENT', 'LATE'];
 
+function StatusButtons({ row, canMark, onSet }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {STATUSES.map((s) => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => onSet(row._id, s)}
+          disabled={!canMark}
+          className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-60 ${
+            row.status === s ? statusColor(s) + ' ring-1 ring-inset ring-black/10' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+          }`}
+        >
+          {s[0] + s.slice(1).toLowerCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ReasonInput({ row, canMark, onReason }) {
+  if (row.status !== 'ABSENT') return <span className="text-xs text-gray-400">—</span>;
+  return (
+    <Input
+      value={row.reason}
+      onChange={(e) => onReason(row._id, e.target.value)}
+      disabled={!canMark}
+      placeholder="e.g. Sick, family emergency…"
+      className="w-full sm:min-w-[240px]"
+    />
+  );
+}
+
 function todayInput() {
   const d = new Date();
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -163,7 +196,25 @@ export default function Attendance() {
         <EmptyState title="No students" message="This class has no active students." />
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-          <div className="scroll-thin overflow-x-auto">
+          {/* Mobile cards */}
+          <div className="divide-y divide-gray-50 sm:hidden">
+            {rows.map((r, i) => (
+              <div key={r._id} className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900">{r.fullName}</p>
+                    <p className="text-xs text-gray-400">{r.studentId}</p>
+                  </div>
+                  <span className="shrink-0 text-xs text-gray-400">#{i + 1}</span>
+                </div>
+                <StatusButtons row={r} canMark={canMark} onSet={setStatus} />
+                <ReasonInput row={r} canMark={canMark} onReason={setReason} />
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="scroll-thin hidden overflow-x-auto sm:block">
             <table className="min-w-full divide-y divide-gray-100 text-sm">
               <thead className="bg-gray-50">
                 <tr>
@@ -182,34 +233,10 @@ export default function Attendance() {
                       <p className="text-xs text-gray-400">{r.studentId}</p>
                     </td>
                     <td className="px-4 py-2">
-                      <div className="flex flex-wrap gap-1.5">
-                        {STATUSES.map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            onClick={() => setStatus(r._id, s)}
-                            disabled={!canMark}
-                            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-60 ${
-                              r.status === s ? statusColor(s) + ' ring-1 ring-inset ring-black/10' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                            }`}
-                          >
-                            {s[0] + s.slice(1).toLowerCase()}
-                          </button>
-                        ))}
-                      </div>
+                      <StatusButtons row={r} canMark={canMark} onSet={setStatus} />
                     </td>
                     <td className="px-4 py-2">
-                      {r.status === 'ABSENT' ? (
-                        <Input
-                          value={r.reason}
-                          onChange={(e) => setReason(r._id, e.target.value)}
-                          disabled={!canMark}
-                          placeholder="e.g. Sick, family emergency…"
-                          className="min-w-[240px]"
-                        />
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
+                      <ReasonInput row={r} canMark={canMark} onReason={setReason} />
                     </td>
                   </tr>
                 ))}

@@ -487,7 +487,7 @@ export default function Uniforms() {
           <Field label="Item Name" required>
             <Input value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} placeholder="e.g. School Shorts - Boys" />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Gender">
               <Select value={itemForm.gender} onChange={(e) => setItemForm({ ...itemForm, gender: e.target.value })}>
                 <option value="BOYS">Boys</option>

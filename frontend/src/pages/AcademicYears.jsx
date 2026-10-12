@@ -199,7 +199,7 @@ export default function AcademicYears() {
           <Field label="Academic Year Name" required hint="Example: 2026-2027">
             <Input value={yearForm.name} onChange={(e) => setYearForm({ ...yearForm, name: e.target.value })} placeholder="e.g. 2026-2027" />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Start Date" required>
               <Input type="date" value={yearForm.startDate} onChange={(e) => setYearForm({ ...yearForm, startDate: e.target.value })} />
             </Field>
@@ -235,7 +235,7 @@ export default function AcademicYears() {
           <Field label="Term Name" required hint="Example: Term 1">
             <Input value={termForm.name} onChange={(e) => setTermForm({ ...termForm, name: e.target.value })} placeholder="e.g. Term 1" />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Start Date" required>
               <Input type="date" value={termForm.startDate} onChange={(e) => setTermForm({ ...termForm, startDate: e.target.value })} />
             </Field>

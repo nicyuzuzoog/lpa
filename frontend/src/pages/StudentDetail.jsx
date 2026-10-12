@@ -71,7 +71,7 @@ export default function StudentDetail() {
         </div>
 
         <div className="lg:col-span-2 space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <StatCard label="Required" value={money(summary.totalRequired)} tone="green" />
             <StatCard label="Paid" value={money(summary.totalPaid)} tone="green" />
             <StatCard label="Balance" value={money(summary.totalBalance)} tone={summary.totalBalance > 0 ? 'red' : 'green'} sub={summary.overallStatus} />

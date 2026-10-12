@@ -276,7 +276,7 @@ export default function Inventory() {
           <Field label="Item Name" required>
             <Input value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} placeholder="e.g. Bag of rice" />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Category">
               <Select value={itemForm.category} onChange={(e) => setItemForm({ ...itemForm, category: e.target.value })}>
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c.replace('_', ' ')}</option>)}

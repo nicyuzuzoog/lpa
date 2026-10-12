@@ -401,10 +401,10 @@ export default function Payments() {
           {summary && summaryRow && (
             <div className="rounded-lg bg-green-50 p-3 text-sm">
               <p className="mb-1 font-medium text-green-800">{feeTypeLabel(form.feeType)} balance for this student:</p>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div><p className="text-xs text-green-600">Required</p><p className="font-semibold text-gray-900">{money(summaryRow.required)}</p></div>
-                <div><p className="text-xs text-green-600">Paid</p><p className="font-semibold text-gray-900">{money(summaryRow.paid)}</p></div>
-                <div><p className="text-xs text-green-600">Balance</p><p className="font-semibold text-gray-900">{money(summaryRow.balance)}</p></div>
+              <div className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
+                <div><p className="text-xs text-green-600">Required</p><p className="break-words font-semibold text-gray-900">{money(summaryRow.required)}</p></div>
+                <div><p className="text-xs text-green-600">Paid</p><p className="break-words font-semibold text-gray-900">{money(summaryRow.paid)}</p></div>
+                <div><p className="text-xs text-green-600">Balance</p><p className="break-words font-semibold text-gray-900">{money(summaryRow.balance)}</p></div>
               </div>
             </div>
           )}

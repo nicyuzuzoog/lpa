@@ -218,16 +218,16 @@ export default function AssessmentDetail() {
         <StatCard label="Status" value={item.status} icon="bi-lock" tone={locked ? 'amber' : 'green'} />
       </div>
 
-      <div className="mb-4 flex gap-1 rounded-xl border border-gray-100 bg-white p-1 shadow-sm">
+      <div className="scroll-thin mb-4 flex gap-1 overflow-x-auto rounded-xl border border-gray-100 bg-white p-1 shadow-sm">
         <button
           onClick={() => setTab('marks')}
-          className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${tab === 'marks' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+          className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${tab === 'marks' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
         >
           Marks Entry (local: {localStats.graded} graded, {localStats.passed} pass)
         </button>
         <button
           onClick={() => setTab('report')}
-          className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${tab === 'report' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+          className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${tab === 'report' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
         >
           Report
         </button>

@@ -56,7 +56,7 @@ export function StatCard({ label, value, sub = null, tone = 'default', icon = nu
           </span>
         )}
       </div>
-      <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">{value}</p>
+      <p className="mt-2 break-words text-lg font-bold leading-tight text-gray-900 sm:text-2xl">{value}</p>
       {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
     </div>
   );
