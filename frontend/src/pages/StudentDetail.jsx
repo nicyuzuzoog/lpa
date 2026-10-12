@@ -81,7 +81,12 @@ export default function StudentDetail() {
             <h2 className="mb-2 text-sm font-semibold text-gray-700">Fee Breakdown</h2>
             <Table
               columns={[
-                { key: 'feeType', label: 'Fee Type', render: (r) => <span className="font-medium">{feeTypeLabel(r.feeType)}</span> },
+                { key: 'feeType', label: 'Fee Type', render: (r) => (
+                  <span className="font-medium">
+                    {feeTypeLabel(r.feeType)}
+                    {r.optional && <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs font-normal text-gray-500">optional</span>}
+                  </span>
+                ) },
                 { key: 'required', label: 'Required', className: 'text-right', render: (r) => money(r.required) },
                 { key: 'paid', label: 'Paid', className: 'text-right', render: (r) => money(r.paid) },
                 { key: 'balance', label: 'Balance', className: 'text-right font-medium', render: (r) => money(r.balance) },

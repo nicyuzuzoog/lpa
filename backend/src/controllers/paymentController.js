@@ -12,6 +12,12 @@ import { recordAudit, diffObjects } from '../services/auditService.js';
 import { notify } from '../services/notificationService.js';
 import { getStudentFeeSummary, paymentStatusFor, refreshUniformEntitlements } from '../services/feeService.js';
 
+function normalizeDay(input) {
+  const d = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(d.getTime())) throw new ApiError(400, 'Invalid date');
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
 async function requiredFor(student, feeType) {
   const structure = await FeeStructure.findOne({
     class: student.class,
@@ -103,10 +109,14 @@ export const listPayments = asyncHandler(async (req, res) => {
 });
 
 export const createPayment = asyncHandler(async (req, res) => {
-  const { student: studentRef, feeType, amount, paymentMethod, paymentDate, note, receiptNumber } = req.body;
+  const { student: studentRef, feeType, amount, paymentMethod, paymentDate, note, receiptNumber, payerName, dueDate } = req.body;
   if (!studentRef || !feeType || !paymentMethod) throw new ApiError(400, 'Student, fee type and payment method are required');
   if (amount === undefined || amount === null || Number.isNaN(Number(amount))) throw new ApiError(400, 'Payment amount is required');
   if (Number(amount) <= 0) throw new ApiError(400, 'Payment amount cannot be zero or negative');
+
+  if (['BANK', 'MOBILE_MONEY'].includes(paymentMethod) && !String(payerName || '').trim()) {
+    throw new ApiError(400, 'Enter the name of the person who paid (required for bank and mobile money payments)');
+  }
 
   const student = await Student.findById(studentRef).populate('class', 'name').populate('academicYear', 'name');
   if (!student) throw new ApiError(404, 'This student does not exist');
@@ -128,15 +138,27 @@ export const createPayment = asyncHandler(async (req, res) => {
   const balanceBefore = required - priorPaid;
   const balanceAfter = required - (priorPaid + Number(amount));
 
+  const payDate = paymentDate ? new Date(paymentDate) : new Date();
+  let due = null;
+  if (dueDate) due = normalizeDay(dueDate);
+  if (balanceAfter > 0 && !due) {
+    throw new ApiError(400, 'Enter the date the student will come back to pay the remaining balance');
+  }
+  if (due && normalizeDay(payDate).getTime() > due.getTime()) {
+    throw new ApiError(400, 'The come-back-to-pay date cannot be before the payment date');
+  }
+
   const doc = await Payment.create({
-    receiptNumber: receiptNumber ? receiptNumber.toUpperCase().trim() : await nextReceiptNumber(paymentDate ? new Date(paymentDate) : new Date()),
+    receiptNumber: receiptNumber ? receiptNumber.toUpperCase().trim() : await nextReceiptNumber(payDate),
     student: student._id,
     academicYear: student.academicYear._id,
     term: student.term,
     feeType,
     amount: Number(amount),
     paymentMethod,
-    paymentDate: paymentDate || new Date(),
+    payerName: String(payerName || '').trim(),
+    paymentDate: payDate,
+    dueDate: due,
     recordedBy: req.user._id,
     balanceBefore,
     balanceAfter,
@@ -223,9 +245,12 @@ export const updatePayment = asyncHandler(async (req, res) => {
   if (!reason || !String(reason).trim()) throw new ApiError(400, 'A reason is required to edit a payment');
 
   const before = doc.toObject();
-  const allowed = ['amount', 'paymentMethod', 'paymentDate', 'feeType', 'note'];
+  const allowed = ['amount', 'paymentMethod', 'paymentDate', 'feeType', 'note', 'payerName', 'dueDate'];
   for (const key of allowed) if (req.body[key] !== undefined && req.body[key] !== '') doc[key] = req.body[key];
   if (Number(doc.amount) <= 0) throw new ApiError(400, 'Payment amount cannot be negative');
+  if (['BANK', 'MOBILE_MONEY'].includes(doc.paymentMethod) && !String(doc.payerName || '').trim()) {
+    throw new ApiError(400, 'Enter the name of the person who paid (required for bank and mobile money payments)');
+  }
 
   const changes = diffObjects(before, doc.toObject(), allowed);
   if (!changes) throw new ApiError(400, 'No changes detected');
@@ -235,6 +260,13 @@ export const updatePayment = asyncHandler(async (req, res) => {
   const otherPaid = await paidFor(student, doc.feeType, doc._id);
   doc.balanceBefore = required - otherPaid;
   doc.balanceAfter = required - (otherPaid + Number(doc.amount));
+
+  if (doc.balanceAfter > 0 && !doc.dueDate) {
+    throw new ApiError(400, 'Enter the date the student will come back to pay the remaining balance');
+  }
+  if (doc.dueDate && normalizeDay(doc.paymentDate).getTime() > normalizeDay(doc.dueDate).getTime()) {
+    throw new ApiError(400, 'The come-back-to-pay date cannot be before the payment date');
+  }
 
   await doc.save();
 

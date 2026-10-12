@@ -54,11 +54,11 @@ async function studentStatusCounts(year, term) {
 
   const [feeAgg, payAgg] = await Promise.all([
     FeeStructure.aggregate([
-      { $match: { status: 'ACTIVE', ...yearMatch } },
+      { $match: { status: 'ACTIVE', feeType: { $ne: 'UNIFORM' }, ...yearMatch } },
       { $group: { _id: { c: '$class', y: '$academicYear', t: '$term' }, total: { $sum: '$requiredAmount' } } },
     ]),
     Payment.aggregate([
-      { $match: { status: 'ACTIVE', ...yearMatch } },
+      { $match: { status: 'ACTIVE', feeType: { $ne: 'UNIFORM' }, ...yearMatch } },
       { $group: { _id: { s: '$student', t: '$term' }, total: { $sum: '$amount' } } },
     ]),
   ]);
@@ -128,7 +128,7 @@ async function commonStats(user, year, term) {
     ]);
 
   const feeCounts = await FeeStructure.aggregate([
-    { $match: { status: 'ACTIVE', ...(year ? { academicYear: year._id } : {}), ...(term ? { term } : {}) } },
+    { $match: { status: 'ACTIVE', feeType: { $ne: 'UNIFORM' }, ...(year ? { academicYear: year._id } : {}), ...(term ? { term } : {}) } },
     { $group: { _id: null, total: { $sum: '$requiredAmount' } } },
   ]);
 

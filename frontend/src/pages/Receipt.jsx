@@ -102,8 +102,10 @@ export default function Receipt() {
       ['Fee Type', feeTypeLabel(receipt.feeType)],
       ['Amount Paid', money(receipt.amount)],
       ['Payment Method', paymentMethodLabel(receipt.paymentMethod)],
+      ...(receipt.payerName ? [['Paid By', receipt.payerName]] : []),
       ['Previous Balance', money(receipt.balanceBefore)],
       ['Remaining Balance', money(receipt.balanceAfter)],
+      ...(receipt.dueDate ? [['Come Back To Pay By', formatDate(receipt.dueDate)]] : []),
       ['Date', formatDate(receipt.paymentDate, true)],
       ['Recorded By', `${receipt.recordedBy?.fullName || ''} ${receipt.recordedBy?.role ? `(${receipt.recordedBy.role})` : ''}`],
     ], 60, y, { lineHeight: 18, bold: 'bold' });
@@ -180,6 +182,7 @@ export default function Receipt() {
             <div className="space-y-1.5 text-sm sm:text-right">
               <p><span className="text-gray-500">Date:</span> <span className="font-medium">{formatDate(receipt.paymentDate, true)}</span></p>
               <p><span className="text-gray-500">Method:</span> <span className="font-medium">{paymentMethodLabel(receipt.paymentMethod)}</span></p>
+              {receipt.payerName && <p><span className="text-gray-500">Paid By:</span> <span className="font-medium">{receipt.payerName}</span></p>}
               <p><span className="text-gray-500">Recorded By:</span> <span className="font-medium">{receipt.recordedBy?.fullName}</span></p>
             </div>
           </div>
@@ -202,6 +205,12 @@ export default function Receipt() {
                 <td className="py-2 text-gray-500">Remaining Balance</td>
                 <td className="py-2 text-right font-bold text-gray-900">{money(receipt.balanceAfter)}</td>
               </tr>
+              {receipt.dueDate && (
+                <tr className="border-t border-gray-100">
+                  <td className="py-2 text-gray-500">Come Back To Pay By</td>
+                  <td className="py-2 text-right font-semibold text-amber-700">{formatDate(receipt.dueDate)}</td>
+                </tr>
+              )}
             </tbody>
           </table>
 

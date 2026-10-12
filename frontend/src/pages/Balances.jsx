@@ -116,7 +116,7 @@ export default function Balances() {
     <div>
       <PageHeader
         title="Student Balances"
-        subtitle="Outstanding balances calculated from required fees minus active payments."
+        subtitle="Outstanding balances from required fees minus active payments. Uniform is optional and is not counted here."
       />
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">

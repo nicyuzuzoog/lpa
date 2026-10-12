@@ -10,6 +10,9 @@ export function paymentStatusFor(required, paid) {
   return 'OVERPAID';
 }
 
+// Uniform is optional: a student who buys no uniform is not treated as owing.
+export const OPTIONAL_FEE_TYPES = ['UNIFORM'];
+
 export async function getStudentFeeSummary(student, { feeType = null } = {}) {
   const academicYearId = student.academicYear?._id || student.academicYear;
   const classId = student.class?._id || student.class;
@@ -47,11 +50,14 @@ export async function getStudentFeeSummary(student, { feeType = null } = {}) {
       balance: required - paid,
       status: paymentStatusFor(required, paid),
       className: s.class?.name,
+      optional: OPTIONAL_FEE_TYPES.includes(s.feeType),
     };
   });
 
-  const required = rows.reduce((a, r) => a + r.required, 0);
-  const paid = rows.reduce((a, r) => a + r.paid, 0);
+  // Optional fees (e.g. uniform) never drive the student's balance or overall status.
+  const billable = feeType ? rows : rows.filter((r) => !r.optional);
+  const required = billable.reduce((a, r) => a + r.required, 0);
+  const paid = billable.reduce((a, r) => a + r.paid, 0);
 
   return {
     rows,

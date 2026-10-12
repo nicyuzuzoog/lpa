@@ -10,7 +10,7 @@ import Table from '../components/Table.jsx';
 import { Modal, ConfirmDialog } from '../components/Modal.jsx';
 import { Button, Field, Input, Select, Textarea } from '../components/Fields.jsx';
 
-const EMPTY_FORM = { student: '', feeType: 'SCHOOL_FEES', amount: '', paymentMethod: 'CASH', paymentDate: '', note: '' };
+const EMPTY_FORM = { student: '', feeType: 'SCHOOL_FEES', amount: '', paymentMethod: 'CASH', payerName: '', paymentDate: '', dueDate: '', note: '' };
 
 function StudentPicker({ value, onChange }) {
   const [query, setQuery] = useState('');
@@ -181,6 +181,12 @@ export default function Payments() {
     if (!isPositive(form.amount)) return toast.error('Enter a valid payment amount greater than 0');
     if (!isIntInRange(form.amount, 1)) return toast.error('Payment amount must be a whole number');
     if (isFutureDate(form.paymentDate)) return toast.error('Payment date cannot be in the future');
+    if (['BANK', 'MOBILE_MONEY'].includes(form.paymentMethod) && !form.payerName.trim())
+      return toast.error('Enter the name of the person who paid (required for bank and mobile money)');
+    if (remainingAfter > 0 && !form.dueDate)
+      return toast.error('Enter the date the student will come back to pay the remaining balance');
+    if (form.dueDate && form.paymentDate && form.dueDate < form.paymentDate)
+      return toast.error('The come-back-to-pay date cannot be before the payment date');
     setSaving(true);
     try {
       const d = await post('/payments', { ...form, amount: Number(form.amount) });
@@ -200,9 +206,13 @@ export default function Payments() {
     if (!isPositive(form.amount)) return toast.error('Enter a valid payment amount greater than 0');
     if (!isIntInRange(form.amount, 1)) return toast.error('Payment amount must be a whole number');
     if (isFutureDate(form.paymentDate)) return toast.error('Payment date cannot be in the future');
+    if (['BANK', 'MOBILE_MONEY'].includes(form.paymentMethod) && !form.payerName.trim())
+      return toast.error('Enter the name of the person who paid (required for bank and mobile money)');
+    if (form.dueDate && form.paymentDate && form.dueDate < form.paymentDate)
+      return toast.error('The come-back-to-pay date cannot be before the payment date');
     setSaving(true);
     try {
-      const d = await put(`/payments/${modal._id}`, { reason: form.reason, amount: Number(form.amount), paymentMethod: form.paymentMethod, paymentDate: form.paymentDate, note: form.note });
+      const d = await put(`/payments/${modal._id}`, { reason: form.reason, amount: Number(form.amount), paymentMethod: form.paymentMethod, payerName: form.payerName, paymentDate: form.paymentDate, dueDate: form.dueDate, note: form.note });
       toast.success(`Payment corrected · ${d.item.receiptNumber}`);
       setModal(null);
       load();
@@ -217,7 +227,9 @@ export default function Payments() {
     setForm({
       amount: p.amount,
       paymentMethod: p.paymentMethod,
+      payerName: p.payerName || '',
       paymentDate: p.paymentDate.slice(0, 10),
+      dueDate: p.dueDate ? p.dueDate.slice(0, 10) : '',
       note: p.note || '',
       reason: '',
     });
@@ -240,6 +252,7 @@ export default function Payments() {
   };
 
   const summaryRow = summary?.rows?.find((r) => r.feeType === form.feeType);
+  const remainingAfter = summaryRow ? summaryRow.balance - Number(form.amount || 0) : 0;
 
   return (
     <div>
@@ -324,8 +337,26 @@ export default function Payments() {
             { key: 'class', label: 'Class', render: (r) => r.student?.class?.name || '—' },
             { key: 'feeType', label: 'Fee Type', render: (r) => feeTypeLabel(r.feeType) },
             { key: 'amount', label: 'Amount', className: 'text-right font-semibold', render: (r) => money(r.amount) },
-            { key: 'paymentMethod', label: 'Method', render: (r) => paymentMethodLabel(r.paymentMethod) },
-            { key: 'paymentDate', label: 'Date', render: (r) => formatDate(r.paymentDate) },
+            {
+              key: 'paymentMethod',
+              label: 'Method',
+              render: (r) => (
+                <span>
+                  {paymentMethodLabel(r.paymentMethod)}
+                  {r.payerName ? <span className="block text-xs text-gray-400">by {r.payerName}</span> : null}
+                </span>
+              ),
+            },
+            {
+              key: 'paymentDate',
+              label: 'Date',
+              render: (r) => (
+                <span>
+                  {formatDate(r.paymentDate)}
+                  {r.dueDate ? <span className="block text-xs text-amber-600">due {formatDate(r.dueDate)}</span> : null}
+                </span>
+              ),
+            },
             { key: 'status', label: 'Status', render: (r) => <Badge className={statusColor(r.status)}>{r.status}</Badge> },
             {
               key: 'recordedBy',
@@ -396,16 +427,34 @@ export default function Payments() {
             <Field label="Payment Date">
               <Input type="date" value={form.paymentDate} onChange={(e) => setForm({ ...form, paymentDate: e.target.value })} />
             </Field>
+            {['BANK', 'MOBILE_MONEY'].includes(form.paymentMethod) && (
+              <Field label="Paid by (depositor name)" required hint="The name of the person who paid at the bank or via mobile money.">
+                <Input value={form.payerName} onChange={(e) => setForm({ ...form, payerName: e.target.value })} placeholder="e.g. Jean Bosco" />
+              </Field>
+            )}
+            {remainingAfter > 0 && (
+              <Field label="Come back to pay by" required hint={`Remaining balance: ${money(remainingAfter)}`}>
+                <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+              </Field>
+            )}
           </div>
 
           {summary && summaryRow && (
             <div className="rounded-lg bg-green-50 p-3 text-sm">
-              <p className="mb-1 font-medium text-green-800">{feeTypeLabel(form.feeType)} balance for this student:</p>
+              <p className="mb-1 font-medium text-green-800">
+                {feeTypeLabel(form.feeType)} balance for this student:
+                {summaryRow.optional && <span className="ml-2 rounded bg-gray-200 px-1.5 py-0.5 text-xs font-medium text-gray-600">optional</span>}
+              </p>
               <div className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
                 <div><p className="text-xs text-green-600">Required</p><p className="break-words font-semibold text-gray-900">{money(summaryRow.required)}</p></div>
                 <div><p className="text-xs text-green-600">Paid</p><p className="break-words font-semibold text-gray-900">{money(summaryRow.paid)}</p></div>
                 <div><p className="text-xs text-green-600">Balance</p><p className="break-words font-semibold text-gray-900">{money(summaryRow.balance)}</p></div>
               </div>
+              {isPositive(form.amount) && (
+                <p className="mt-2 text-center text-xs font-medium text-green-800">
+                  Remaining after this payment: {money(Math.max(0, remainingAfter))}
+                </p>
+              )}
             </div>
           )}
 
@@ -438,9 +487,17 @@ export default function Payments() {
                 {['CASH', 'BANK', 'MOBILE_MONEY', 'OTHER'].map((m) => <option key={m} value={m}>{paymentMethodLabel(m)}</option>)}
               </Select>
             </Field>
+            {['BANK', 'MOBILE_MONEY'].includes(form.paymentMethod) && (
+              <Field label="Paid by (depositor name)" required>
+                <Input value={form.payerName} onChange={(e) => setForm({ ...form, payerName: e.target.value })} placeholder="e.g. Jean Bosco" />
+              </Field>
+            )}
           </div>
           <Field label="Payment Date">
             <Input type="date" value={form.paymentDate} onChange={(e) => setForm({ ...form, paymentDate: e.target.value })} />
+          </Field>
+          <Field label="Come back to pay by" hint="Required if the student still has a balance after this payment.">
+            <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
           </Field>
           <Field label="Note">
             <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
