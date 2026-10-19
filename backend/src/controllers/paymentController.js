@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import FeeStructure from '../models/FeeStructure.js';
 import Payment from '../models/Payment.js';
 import PaymentReversal from '../models/PaymentReversal.js';
@@ -10,7 +11,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { parsePagination, nextSequence, pad } from '../utils/sequence.js';
 import { recordAudit, diffObjects } from '../services/auditService.js';
 import { notify } from '../services/notificationService.js';
-import { allocatedPaidFor, batchFeeSummaries, getStudentFeeSummary, mealsRequiredFor, paymentStatusFor, refreshUniformEntitlements } from '../services/feeService.js';
+import { allocatedPaidFor, batchFeeSummaries, feeOverrideFor, getStudentFeeSummary, mealsRequiredFor, paymentStatusFor, refreshUniformEntitlements } from '../services/feeService.js';
 
 function normalizeDay(input) {
   const d = input instanceof Date ? input : new Date(input);
@@ -28,7 +29,9 @@ async function requiredFor(student, feeType) {
     feeType,
     status: 'ACTIVE',
   });
-  return structure ? structure.requiredAmount : 0;
+  if (!structure) return 0;
+  // Per-student discount: the child's override replaces the class amount.
+  return feeOverrideFor(student, feeType) ?? structure.requiredAmount;
 }
 
 async function paidFor(student, feeType, excludePaymentId = null) {
@@ -215,6 +218,7 @@ export const createPayment = asyncHandler(async (req, res) => {
 });
 
 export const getPayment = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'Payment not found');
   const doc = await Payment.findById(req.params.id)
     .populate({ path: 'student', select: 'studentId firstName lastName class gender motherPhone fatherPhone' })
     .populate('academicYear', 'name')
@@ -225,6 +229,7 @@ export const getPayment = asyncHandler(async (req, res) => {
 });
 
 export const getReceipt = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'Payment not found');
   const doc = await Payment.findById(req.params.id)
     .populate({ path: 'student', select: 'studentId firstName lastName class gender' })
     .populate('academicYear', 'name')
@@ -251,6 +256,7 @@ export const getReceipt = asyncHandler(async (req, res) => {
 });
 
 export const updatePayment = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'Payment not found');
   const doc = await Payment.findById(req.params.id);
   if (!doc) throw new ApiError(404, 'Payment not found');
   if (doc.status !== 'ACTIVE') throw new ApiError(400, `This payment has already been ${doc.status.toLowerCase()}`);
@@ -320,6 +326,7 @@ export const updatePayment = asyncHandler(async (req, res) => {
 });
 
 async function settlePayment(req, res, status, type) {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'Payment not found');
   const doc = await Payment.findById(req.params.id);
   if (!doc) throw new ApiError(404, 'Payment not found');
   if (doc.status !== 'ACTIVE') throw new ApiError(400, `This payment has already been ${doc.status.toLowerCase()}`);

@@ -199,10 +199,13 @@ export default function Attendance() {
           {/* Mobile cards */}
           <div className="divide-y divide-gray-50 dark:divide-gray-800 sm:hidden">
             {rows.map((r, i) => (
-              <div key={r._id} className="space-y-3 p-4">
+              <div key={r._id} className={`space-y-3 p-4 ${r.status === 'ABSENT' ? 'bg-red-50/60 dark:bg-red-950/30' : ''}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-gray-100">{r.fullName}</p>
+                    <p className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-gray-100">
+                      {r.status === 'ABSENT' && <i className="bi bi-exclamation-triangle-fill text-red-600 dark:text-red-400" aria-hidden="true" />}
+                      <span className={r.status === 'ABSENT' ? 'text-red-700 dark:text-red-400' : ''}>{r.fullName}</span>
+                    </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500">{r.studentId}</p>
                   </div>
                   <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">#{i + 1}</span>
@@ -226,10 +229,13 @@ export default function Attendance() {
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                 {rows.map((r, i) => (
-                  <tr key={r._id} className="hover:bg-green-50/40 dark:hover:bg-gray-800/40">
+                  <tr key={r._id} className={r.status === 'ABSENT' ? 'bg-red-50/60 dark:bg-red-950/30' : 'hover:bg-green-50/40 dark:hover:bg-gray-800/40'}>
                     <td className="px-4 py-2 text-gray-400 dark:text-gray-500">{i + 1}</td>
                     <td className="px-4 py-2">
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{r.fullName}</p>
+                      <p className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-gray-100">
+                        {r.status === 'ABSENT' && <i className="bi bi-exclamation-triangle-fill text-red-600 dark:text-red-400" aria-hidden="true" />}
+                        <span className={r.status === 'ABSENT' ? 'text-red-700 dark:text-red-400' : ''}>{r.fullName}</span>
+                      </p>
                       <p className="text-xs text-gray-400 dark:text-gray-500">{r.studentId}</p>
                     </td>
                     <td className="px-4 py-2">

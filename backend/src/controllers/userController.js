@@ -111,6 +111,7 @@ export const createUser = asyncHandler(async (req, res) => {
 });
 
 export const updateUser = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'User not found');
   const user = await User.findById(req.params.id);
   if (!user) throw new ApiError(404, 'User not found');
 
@@ -175,4 +176,17 @@ export const updateUser = asyncHandler(async (req, res) => {
   }
 
   res.json({ success: true, user: user.toSafeJSON() });
+});
+
+// User accounts are never deleted: disabling keeps receipts, payments and the
+// audit trail pointing at a real user. This endpoint exists only to answer any
+// old client with a clear message instead of a confusing 404.
+export const deleteUser = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'User not found');
+  const user = await User.findById(req.params.id);
+  if (!user) throw new ApiError(404, 'User not found');
+  throw new ApiError(
+    403,
+    'User accounts cannot be deleted. Set the account status to "Disabled" instead so records stay intact.'
+  );
 });

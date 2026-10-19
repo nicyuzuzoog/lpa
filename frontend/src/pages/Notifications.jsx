@@ -5,9 +5,10 @@ import { useToast } from '../context/ToastContext.jsx';
 import { formatDateTime, statusColor } from '../utils/format.js';
 import { PageHeader, Spinner, Badge, Pagination } from '../components/ui.jsx';
 import { Button } from '../components/Fields.jsx';
+import { ReminderModal } from '../components/ReminderModal.jsx';
 
 export default function Notifications() {
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const toast = useToast();
   const [rows, setRows] = useState([]);
   const [unread, setUnread] = useState(0);
@@ -16,6 +17,9 @@ export default function Notifications() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [composerOpen, setComposerOpen] = useState(false);
+
+  const canSend = can('notifications:send');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,6 +54,10 @@ export default function Notifications() {
     setUnread(0);
   };
 
+  const openComposer = () => {
+    setComposerOpen(true);
+  };
+
   return (
     <div>
       <PageHeader
@@ -57,6 +65,11 @@ export default function Notifications() {
         subtitle="Important actions that happened in the system."
         actions={
           <div className="flex gap-2">
+            {canSend && (
+              <Button onClick={openComposer}>
+                <i className="bi bi-bell" /> Send reminder
+              </Button>
+            )}
             {['', 'unread'].map((f) => (
               <button
                 key={f}
@@ -112,6 +125,12 @@ export default function Notifications() {
           <Pagination page={page} pages={pages} total={total} onPage={setPage} />
         </div>
       )}
+
+      <ReminderModal
+        open={composerOpen}
+        onClose={() => setComposerOpen(false)}
+        onSent={load}
+      />
     </div>
   );
 }

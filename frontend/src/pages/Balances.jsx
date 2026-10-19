@@ -1,12 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { get } from '../services/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { money, statusColor, isRedStatus } from '../utils/format.js';
 import { exportPdf, exportExcel, moneyFormat } from '../utils/export.js';
 import { PageHeader, Spinner, Badge, Toolbar, StatCard } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Button, Input, Select } from '../components/Fields.jsx';
+import { ReminderModal } from '../components/ReminderModal.jsx';
 
 const EMPTY_FILTERS = { search: '', class: '', academicYear: '', term: '', status: '' };
 
@@ -15,6 +17,7 @@ const studentIdOf = (r) => r.studentId || r.student?.studentId || '';
 const classNameOf = (r) => r.class || r.student?.class?.name || '';
 
 export default function Balances() {
+  const { can } = useAuth();
   const toast = useToast();
   const [rows, setRows] = useState([]);
   const [totals, setTotals] = useState({ required: 0, paid: 0, balance: 0 });
@@ -24,6 +27,8 @@ export default function Balances() {
   const [ready, setReady] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [remindRow, setRemindRow] = useState(null);
+  const canSend = can('notifications:send');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -77,6 +82,21 @@ export default function Balances() {
     setSearchInput('');
     setFilters((f) => ({ ...EMPTY_FILTERS, academicYear: f.academicYear, term: f.term }));
   };
+
+  const outstanding = rows.filter((r) => r.balance > 0);
+  const isBulk = remindRow?.bulk;
+  const remindStudent = !isBulk && remindRow ? remindRow.student : null;
+  const remindDefaults = isBulk
+    ? {
+        title: 'Outstanding balances',
+        message: `There ${outstanding.length === 1 ? 'is' : 'are'} ${outstanding.length} student${outstanding.length === 1 ? '' : 's'} with an outstanding balance totalling ${money(totals.balance)}. Kindly follow up.`,
+      }
+    : remindRow
+      ? {
+          title: `Balance reminder — ${studentName(remindRow)}`,
+          message: `${studentName(remindRow)} (${studentIdOf(remindRow)}) has an outstanding balance of ${money(remindRow.balance)}. Kindly follow up on the payment.`,
+        }
+      : { title: '', message: '' };
 
   const doPdf = () => {
     exportPdf({
@@ -159,6 +179,11 @@ export default function Balances() {
           )}
         </div>
         <div className="flex gap-2">
+          {canSend && outstanding.length > 0 && (
+            <Button variant="secondary" onClick={() => setRemindRow({ bulk: true })}>
+              <i className="bi bi-bell" /> Remind balances
+            </Button>
+          )}
           <Button variant="secondary" onClick={doPdf}><i className="bi bi-file-earmark-pdf" /> PDF</Button>
           <Button variant="secondary" onClick={doExcel}><i className="bi bi-file-earmark-excel" /> Excel</Button>
         </div>
@@ -189,6 +214,18 @@ export default function Balances() {
                 <Badge className={statusColor(r.status)}>{r.status.replace('_', ' ')}</Badge>
               </span>
             ) },
+            ...(canSend
+              ? [{
+                  key: 'remind',
+                  label: '',
+                  className: 'text-right',
+                  render: (r) => (r.balance > 0 ? (
+                    <button onClick={() => setRemindRow(r)} className="text-sm font-medium text-green-700 dark:text-green-400 hover:underline">
+                      Remind
+                    </button>
+                  ) : null),
+                }]
+              : []),
           ]}
           rows={rows}
           rowClassName={(r) => (isRedStatus(r.status) ? 'bg-red-50/80 ring-1 ring-inset ring-red-100 dark:bg-red-950/30 dark:ring-red-900' : '')}
@@ -197,6 +234,14 @@ export default function Balances() {
           keyFn={(r) => r.student?._id || r.studentId}
         />
       )}
+
+      <ReminderModal
+        open={!!remindRow}
+        onClose={() => setRemindRow(null)}
+        student={remindStudent}
+        defaultTitle={remindDefaults.title}
+        defaultMessage={remindDefaults.message}
+      />
     </div>
   );
 }

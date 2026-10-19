@@ -18,8 +18,19 @@ export const OPTIONAL_FEE_TYPES = ['UNIFORM', 'MEALS'];
 // tuition and materials. Configurable via the `meal_fee_per_term` setting.
 export const MEALS_FEE_PER_TERM_DEFAULT = 40000;
 
+// Per-student fee override (discount): when set on the student it replaces the
+// standard amount (class fee structure / setting) for that fee type.
+export function feeOverrideFor(student, feeType) {
+  const raw = student?.feeOverrides?.[feeType];
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
 export async function mealsRequiredFor(student) {
   if (!student.eatsAtSchool) return 0;
+  const override = feeOverrideFor(student, 'MEALS');
+  if (override !== null) return override;
   const value = await Setting.get('meal_fee_per_term', MEALS_FEE_PER_TERM_DEFAULT);
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? n : MEALS_FEE_PER_TERM_DEFAULT;
@@ -55,11 +66,24 @@ async function obligationsFor(student) {
     }).populate('class', 'name').lean(),
     mealsRequiredFor(student),
   ]);
+  const mealsOverride = feeOverrideFor(student, 'MEALS');
+  const mealsStandard =
+    mealsOverride === null
+      ? mealsRequired
+      : Number(await Setting.get('meal_fee_per_term', MEALS_FEE_PER_TERM_DEFAULT)) || MEALS_FEE_PER_TERM_DEFAULT;
   const obligations = [];
-  if (mealsRequired > 0) obligations.push({ feeType: 'MEALS', required: mealsRequired });
+  if (mealsRequired > 0) {
+    obligations.push({ feeType: 'MEALS', required: mealsRequired, standardAmount: mealsStandard });
+  }
   for (const s of structures) {
     if (OPTIONAL_FEE_TYPES.includes(s.feeType)) continue; // uniform never joins the waterfall
-    obligations.push({ feeType: s.feeType, required: s.requiredAmount });
+    // Apply the student's personal fee override (discount), if any.
+    const override = feeOverrideFor(student, s.feeType);
+    obligations.push({
+      feeType: s.feeType,
+      required: override ?? s.requiredAmount,
+      standardAmount: s.requiredAmount,
+    });
   }
   return { structures, mealsRequired, obligations };
 }
@@ -88,6 +112,7 @@ export async function allocatedPaidFor(student, feeType, { excludePaymentId = nu
 
 export async function getStudentFeeSummary(student, { feeType = null } = {}) {
   const academicYearId = student.academicYear?._id || student.academicYear;
+  const mealsOverride = feeOverrideFor(student, 'MEALS');
   const { structures, mealsRequired, obligations } = await obligationsFor(student);
 
   const paidAgg = await Payment.aggregate([
@@ -110,9 +135,12 @@ export async function getStudentFeeSummary(student, { feeType = null } = {}) {
   const rows = [];
   if ((!feeType || feeType === 'MEALS') && (mealsRequired > 0 || feeType === 'MEALS')) {
     const paid = allocation.MEALS || 0;
+    const standard = obligations.find((o) => o.feeType === 'MEALS')?.standardAmount ?? mealsRequired;
     rows.push({
       feeType: 'MEALS',
       required: mealsRequired,
+      standardAmount: standard,
+      discounted: mealsOverride !== null && mealsRequired < standard,
       paid,
       balance: mealsRequired - paid,
       status: paymentStatusFor(mealsRequired, paid),
@@ -124,11 +152,14 @@ export async function getStudentFeeSummary(student, { feeType = null } = {}) {
   for (const s of structures) {
     if (feeType && s.feeType !== feeType) continue;
     // Uniform is tracked per its own payments (never part of the waterfall).
+    const ob = obligations.find((o) => o.feeType === s.feeType);
     const paid = s.feeType === 'UNIFORM' ? paidMap.UNIFORM || 0 : allocation[s.feeType] || 0;
-    const required = s.requiredAmount;
+    const required = ob?.required ?? s.requiredAmount;
     rows.push({
       feeType: s.feeType,
       required,
+      standardAmount: ob?.standardAmount ?? s.requiredAmount,
+      discounted: feeOverrideFor(student, s.feeType) !== null && required < (ob?.standardAmount ?? s.requiredAmount),
       paid,
       balance: required - paid,
       status: paymentStatusFor(required, paid),
@@ -199,13 +230,19 @@ export async function batchFeeSummaries(students) {
     const y = s.academicYear?._id || s.academicYear;
     const c = s.class?._id || s.class;
     const sts = structsByKey.get(`${y}|${s.term}|${c}`) || [];
-    const mealsRequired = s.eatsAtSchool ? mealsPerTerm : 0;
+    const mealsOverride = feeOverrideFor(s, 'MEALS');
+    const mealsRequired = s.eatsAtSchool ? (mealsOverride ?? mealsPerTerm) : 0;
 
     const obligations = [];
-    if (mealsRequired > 0) obligations.push({ feeType: 'MEALS', required: mealsRequired });
+    if (mealsRequired > 0) obligations.push({ feeType: 'MEALS', required: mealsRequired, standardAmount: mealsPerTerm });
     for (const st of sts) {
       if (OPTIONAL_FEE_TYPES.includes(st.feeType)) continue;
-      obligations.push({ feeType: st.feeType, required: st.requiredAmount });
+      const override = feeOverrideFor(s, st.feeType);
+      obligations.push({
+        feeType: st.feeType,
+        required: override ?? st.requiredAmount,
+        standardAmount: st.requiredAmount,
+      });
     }
 
     const paidMap = paidByStudent.get(`${s._id}|${y}|${s.term}`) || {};
@@ -220,6 +257,8 @@ export async function batchFeeSummaries(students) {
       rows.push({
         feeType: 'MEALS',
         required: mealsRequired,
+        standardAmount: mealsPerTerm,
+        discounted: mealsOverride !== null && mealsRequired < mealsPerTerm,
         paid,
         balance: mealsRequired - paid,
         status: paymentStatusFor(mealsRequired, paid),
@@ -228,13 +267,17 @@ export async function batchFeeSummaries(students) {
       });
     }
     for (const st of sts) {
+      const ob = obligations.find((o) => o.feeType === st.feeType);
+      const required = ob?.required ?? st.requiredAmount;
       const paid = st.feeType === 'UNIFORM' ? paidMap.UNIFORM || 0 : allocation[st.feeType] || 0;
       rows.push({
         feeType: st.feeType,
-        required: st.requiredAmount,
+        required,
+        standardAmount: ob?.standardAmount ?? st.requiredAmount,
+        discounted: feeOverrideFor(s, st.feeType) !== null && required < (ob?.standardAmount ?? st.requiredAmount),
         paid,
-        balance: st.requiredAmount - paid,
-        status: paymentStatusFor(st.requiredAmount, paid),
+        balance: required - paid,
+        status: paymentStatusFor(required, paid),
         className: st.class?.name,
         optional: OPTIONAL_FEE_TYPES.includes(st.feeType),
       });

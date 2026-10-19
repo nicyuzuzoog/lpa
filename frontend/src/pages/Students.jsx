@@ -3,17 +3,26 @@ import { Link } from 'react-router-dom';
 import { get, post, put } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import { formatDate, statusColor } from '../utils/format.js';
+import { formatDate, statusColor, feeTypeLabel } from '../utils/format.js';
 import { isPhone, isPlausibleDob } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal } from '../components/Modal.jsx';
 import { Button, Field, Input, Select, Textarea } from '../components/Fields.jsx';
 
+// Per-child fee discounts: set an amount to charge that child something other
+// than the standard class fee; blank = the usual class amount.
+const FEE_OVERRIDE_TYPES = ['SCHOOL_FEES', 'MATERIALS', 'MEALS', 'UNIFORM', 'OTHER'];
+const EMPTY_OVERRIDES = Object.fromEntries(FEE_OVERRIDE_TYPES.map((t) => [t, '']));
+
 const EMPTY = {
   firstName: '', lastName: '', gender: 'MALE', dateOfBirth: '', class: '', academicYear: '',
   term: '', status: 'ACTIVE', eatsAtSchool: false, motherPhone: '', fatherPhone: '', notes: '',
+  feeOverrides: { ...EMPTY_OVERRIDES },
 };
+
+// True when the child has a discount on at least one fee type.
+const hasDiscount = (o) => FEE_OVERRIDE_TYPES.some((t) => o?.[t] !== undefined && o?.[t] !== null && o?.[t] !== '');
 
 export default function Students() {
   const { can } = useAuth();
@@ -29,6 +38,7 @@ export default function Students() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [structures, setStructures] = useState([]);
   const [filters, setFilters] = useState({ search: '', class: '', status: '', academicYear: '', term: '' });
 
   const load = useCallback(async () => {
@@ -54,6 +64,24 @@ export default function Students() {
     load();
   }, [load]);
 
+  // Standard class amounts, shown as hints next to the per-child discounts.
+  useEffect(() => {
+    if (!modalOpen || !form.class || !form.academicYear || !form.term) {
+      setStructures([]);
+      return undefined;
+    }
+    let alive = true;
+    get('/fees/structures', { class: form.class, academicYear: form.academicYear, term: form.term })
+      .then((d) => alive && setStructures(d.items || []))
+      .catch(() => alive && setStructures([]));
+    return () => { alive = false; };
+  }, [modalOpen, form.class, form.academicYear, form.term]);
+
+  const standardByType = structures.reduce((acc, s) => {
+    if (s.status === 'ACTIVE') acc[s.feeType] = s.requiredAmount;
+    return acc;
+  }, {});
+
   const setFilter = (key, value) => {
     setPage(1);
     setFilters((f) => ({ ...f, [key]: value }));
@@ -62,7 +90,12 @@ export default function Students() {
   const openCreate = () => {
     const activeYear = years.find((y) => y.isActive) || years[0];
     setEditing(null);
-    setForm({ ...EMPTY, academicYear: activeYear?._id || '', term: activeYear?.terms?.find((t) => t.status === 'ACTIVE')?.name || activeYear?.terms?.[0]?.name || '' });
+    setForm({
+      ...EMPTY,
+      feeOverrides: { ...EMPTY_OVERRIDES },
+      academicYear: activeYear?._id || '',
+      term: activeYear?.terms?.find((t) => t.status === 'ACTIVE')?.name || activeYear?.terms?.[0]?.name || '',
+    });
     setModalOpen(true);
   };
 
@@ -81,6 +114,9 @@ export default function Students() {
       motherPhone: student.motherPhone || '',
       fatherPhone: student.fatherPhone || '',
       notes: student.notes || '',
+      feeOverrides: Object.fromEntries(
+        FEE_OVERRIDE_TYPES.map((t) => [t, student.feeOverrides?.[t] ?? ''])
+      ),
     });
     setModalOpen(true);
   };
@@ -94,13 +130,25 @@ export default function Students() {
     if (form.dateOfBirth && !isPlausibleDob(form.dateOfBirth)) return toast.error('Enter a valid date of birth (not in the future)');
     if (!isPhone(form.motherPhone)) return toast.error('Enter a valid mother phone number');
     if (!isPhone(form.fatherPhone)) return toast.error('Enter a valid father phone number');
+    const feeOverrides = {};
+    for (const t of FEE_OVERRIDE_TYPES) {
+      const raw = form.feeOverrides?.[t];
+      if (raw === '' || raw === null || raw === undefined) {
+        feeOverrides[t] = null;
+        continue;
+      }
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 0) return toast.error(`Enter a valid discount amount for ${feeTypeLabel(t)}`);
+      feeOverrides[t] = n;
+    }
+    const payload = { ...form, feeOverrides };
     setSaving(true);
     try {
       if (editing) {
-        await put(`/students/${editing._id}`, form);
+        await put(`/students/${editing._id}`, payload);
         toast.success('Student updated');
       } else {
-        const res = await post('/students', form);
+        const res = await post('/students', payload);
         toast.success(`Student created: ${res.item.studentId}`);
       }
       setModalOpen(false);
@@ -179,6 +227,18 @@ export default function Students() {
               label: 'Meals',
               render: (r) =>
                 r.eatsAtSchool ? <Badge className="bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400">Eats at school</Badge> : <span className="text-gray-300 dark:text-gray-600">—</span>,
+            },
+            {
+              key: 'discounts',
+              label: 'Discounts',
+              render: (r) => {
+                const ov = r.feeOverrides || {};
+                const has = hasDiscount(ov);
+                if (!has) return <span className="text-gray-300 dark:text-gray-600">—</span>;
+                return (
+                  <Badge className="bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400">Has discounts</Badge>
+                );
+              },
             },
             { key: 'academicYear', label: 'Year / Term', render: (r) => <span className="text-gray-500 dark:text-gray-400">{r.academicYear?.name} · {r.term}</span> },
             {
@@ -286,6 +346,33 @@ export default function Students() {
           <Field label="Notes" className="sm:col-span-2">
             <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="e.g. Any additional notes about the student" />
           </Field>
+          <div className="sm:col-span-2 space-y-3">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Per-child fee discounts (optional)</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Leave blank to use the standard class amount. Set a positive number to charge this child a specific amount for that fee (e.g. a lower amount for materials).</p>
+            {FEE_OVERRIDE_TYPES.map((t) => {
+              const std = standardByType[t];
+              return (
+                <div key={t} className="grid gap-2 sm:grid-cols-[160px,1fr] sm:items-center">
+                  <Field label={feeTypeLabel(t)}>
+                    <Input
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={form.feeOverrides?.[t] ?? ''}
+                      onChange={(e) => setForm({
+                        ...form,
+                        feeOverrides: { ...(form.feeOverrides || {}), [t]: e.target.value },
+                      })}
+                      placeholder="e.g. 20000"
+                    />
+                  </Field>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 sm:mt-5">
+                    Standard for this class/term: {std != null ? `${Number(std).toLocaleString()} RWF` : 'Not set yet'}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
           <p className="sm:col-span-2 rounded-lg bg-green-50 dark:bg-green-950/40 px-3 py-2 text-xs text-green-700 dark:text-green-400">
             Guardian/parent names are not required. Mother and father phone numbers are both optional.
           </p>

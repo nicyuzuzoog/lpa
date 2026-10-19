@@ -36,15 +36,19 @@ export function statusColor(status) {
     case 'PAID':
     case 'ACTIVE':
     case 'RECEIVED':
+    case 'PRESENT':
       return 'bg-green-100 text-green-700 dark:bg-green-950/70 dark:text-green-400';
     case 'PARTIALLY_PAID':
     case 'INACTIVE':
     case 'PARTIAL':
+    case 'LATE':
+    case 'REMINDER':
       return 'bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-400';
     case 'UNPAID':
     case 'VOID':
     case 'REVERSED':
     case 'DISABLED':
+    case 'ABSENT':
       return 'bg-red-100 text-red-700 dark:bg-red-950/70 dark:text-red-400';
     case 'OVERPAID':
     case 'GRADUATED':
@@ -56,8 +60,8 @@ export function statusColor(status) {
   }
 }
 
-// Statuses rendered in red (UNPAID, VOID, REVERSED, DISABLED …) so views can flag them loudly.
-export const RED_STATUSES = ['UNPAID', 'VOID', 'REVERSED', 'DISABLED'];
+// Statuses rendered in red (UNPAID, VOID, REVERSED, DISABLED, ABSENT …) so views can flag them loudly.
+export const RED_STATUSES = ['UNPAID', 'VOID', 'REVERSED', 'DISABLED', 'ABSENT'];
 
 export function isRedStatus(status) {
   return RED_STATUSES.includes(status);

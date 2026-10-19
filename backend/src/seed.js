@@ -115,6 +115,89 @@ const STOCK_DELIVERIES = [
 ];
 
 // ============================================================================
+// UNIFORMS TAKEN BY STUDENTS — "UKO ABANYESHURI BAFASHE IMYENDA"
+// ============================================================================
+// One row = one line of the Word table (a child can appear on two lines; each
+// line is a separate pick-up). `items` = the columns marked "1":
+//   J  = Uniform Ijipo        K  = Uniform Ikabutura   S  = Uniform Ishati
+//   SK = Sport Ikabutura      SU = Sport Umupira       U  = Umupira
+//   SO = Socks (amasogisi) Uniform                     SP = Socks (amasogisi) Sport
+const UNIFORM_CODES = {
+  J: 'Uniform Ijipo',
+  K: 'Uniform Ikabutura',
+  S: 'Uniform Ishati',
+  SK: 'Sport Ikabutura',
+  SU: 'Sport Umupira',
+  U: 'Umupira',
+  SO: 'Socks Uniform',
+  SP: 'Socks Sport',
+};
+// The Word list has no dates; this is the day it was handed in.
+const UNIFORM_TAKEN_DATE = '2026-10-19';
+const UNIFORM_TAKEN = [
+  { no: 1, name: 'INEZA KUNDWA AVILLA', items: 'SK SU U SO SP' },
+  { no: 2, name: 'IRANEZEZA MPANO BRAYAN', items: 'U SP' },
+  { no: 3, name: 'MUSHAMBO ASSAN ASIFU', items: 'SO SP' },
+  { no: 4, name: 'NDAGIJIMANA IRAKOZENICOLE', items: 'K S SK SU U SO SP' },
+  { no: 5, name: 'AHIRWE MUGABO JUNIOR', items: 'K SK SU SP' },
+  { no: 6, name: 'IRANEZEZA MPANO BRAYAN', items: 'K S SK SU SO SP' },
+  { no: 7, name: 'IBAMBE KEZA MERVEILLE', items: 'S SK SU SP' },
+  { no: 8, name: 'GANZA LOGAN DYLAN', items: 'K S SK SU SO SP' },
+  { no: 9, name: 'RINGUYENEZA SIEF ALDIN', items: 'K S SK SU SP' },
+  { no: 10, name: 'NIYOMUNEZERO SAMUEL', items: 'K S SK SU SO SP' },
+  { no: 11, name: 'IRAKOZE DESTINE', items: 'K S SK SU SP' },
+  { no: 12, name: 'TUYISHIME ORNELLA', items: 'J S SO SP' },
+  { no: 13, name: 'IGIHOZO JEHOVANIS', items: 'J S SK SU SO SP' },
+  { no: 14, name: 'KUNDWA ANDRY MALO GLAD', items: 'K S SO SP' },
+  { no: 15, name: 'SEZERANO LOUIS BLAISE', items: 'K S SK SU' },
+  { no: 16, name: 'CYUSA IMENA HENRY', items: 'S SK SU SO SP' },
+  { no: 17, name: 'AGANZE HAPPY MERCI', items: 'K S SK SU SP' },
+  { no: 18, name: 'IRIZA AYAN DAVINA', items: 'J K SK SU SP' },
+  { no: 19, name: 'IRANKUNDA FRANK', items: 'K S SK SU' },
+  { no: 20, name: 'INEZA HIRWA SANDRA', items: 'J SK SU SP' },
+  { no: 21, name: 'INEZA DANIELLA', items: 'J S SO SP' },
+  { no: 22, name: 'IGIHOZO BIGILIMANA BRIELLA', items: 'J S SK SU SO SP' },
+  { no: 23, name: 'IRATABARA YAKINI', items: 'J S SP' },
+  { no: 24, name: 'MUGISHA GIFT GLORIA', items: 'J SK SU' },
+  { no: 25, name: 'UWACU KUNDWA JESSY', items: 'K S SK SU SP' },
+  { no: 26, name: 'UWAYO NEILLA RAFA', items: 'S SK SU SP' },
+  { no: 27, name: 'NIYOMUKIZA EMEMA', items: 'S SK SU SP' },
+  { no: 28, name: 'ASHIMWE GANZA GUYANE', items: 'K S' },
+  { no: 29, name: 'NTWALI LOIC HERTIER', items: 'K SP' },
+  { no: 30, name: 'MUGABO LEVIS', items: 'K SK SU SP' },
+  { no: 31, name: 'NDACYAYISENGA KUNDWA SHEMA JUNIOR DAGHOBERT', items: 'SK SU SO SP' },
+  { no: 32, name: 'MUTUYIMANA DAYELA', items: 'J SP' },
+  { no: 33, name: 'ISHIMWE KEVIN LODRIGO', items: 'SO SP' },
+  { no: 34, name: 'NIYONGIRA JEAN D’AMOUR', items: 'K S SO SP' },
+  { no: 35, name: 'NIYONKURU OLGA', items: 'SK SU' },
+  { no: 36, name: 'HIRWA SHAMI PHILIPPE', items: 'SO SP' },
+  { no: 37, name: 'MUCYO YARSI YASSAH', items: 'K S SK SU SP' },
+  { no: 38, name: 'INEZAYIMANA MILLA GABRIELLA', items: 'J S SK SU SO SP' },
+  { no: 39, name: 'ISHIMWE LOUANGE TRECY', items: 'SK SU SO SP' },
+  { no: 40, name: 'SHAMI JEAN AIME MUHOZA', items: 'K S SO SP' },
+  { no: 41, name: 'GANZA AYAN', items: 'K S SK SU U SO SP' },
+  { no: 42, name: 'AKUZWE LANA NICOLE', items: 'J S SK SU U SO SP' },
+  { no: 43, name: 'BIGWI NICOLAS SEZERANO', items: 'K S SK SU U SO SP' },
+  { no: 44, name: 'IRANKUNDA SHAMI CHANELA', items: 'SK SU SO SP' },
+  { no: 45, name: 'UWIGISUBIZO OLGA JOICE', items: 'J S SK SU U SO SP' },
+  { no: 46, name: 'NGANJI DARCY ASHA KENDRIK', items: 'S SK U SO SP' },
+  { no: 47, name: 'MUGISHA GIFT GLORIA', items: 'S' },
+  { no: 48, name: 'SHIMWA INEZA HORORE', items: 'U SO SP' },
+  { no: 49, name: 'INEZA HAPPY CHALOM', items: 'J SK SU U SO SP' },
+  { no: 50, name: 'YUSA OWEN EMMY', items: 'K S U SO SP' },
+  { no: 51, name: 'KAYITARE ISARO TRECY', items: 'J S U SO SP' },
+  { no: 52, name: 'RAMBA ELIO DARCY', items: 'U SO SP' },
+  { no: 53, name: 'RUGWIRO SHAMI NOLAN', items: 'J S U SO SP' },
+  { no: 54, name: 'INEZA INGABIRE JESSCA', items: 'J S U SO SP' },
+  { no: 55, name: 'SHAMI MIGUEL FRED', items: 'K SK SU' },
+  { no: 56, name: 'NTWALI HERTIER', items: 'S U SO SP' },
+  { no: 57, name: 'MFURA RANGIRA GUYANE', items: 'SP' },
+  { no: 58, name: 'UWAYO DIVIN', items: 'K S' },
+  { no: 59, name: 'GICU VICKY LOGAN', items: 'K S SK SU' },
+  { no: 60, name: 'IZIBYOSE AIME J.DE DIEU', items: 'SK SU SO' },
+];
+
+// ============================================================================
 // PAYMENT RECORDS (Mobile Money + Equity Bank lists)
 // ============================================================================
 const MOMO_PAYMENTS = [
@@ -430,6 +513,19 @@ const NAME_ALIASES = {
   TUYISHIMEORNEILLA: 'TUYISHIME ORNELLA',
   IRASUBIZAAIMEMANDELA: 'IRASUBIZA AIME MANDELLA',
   UWIGISUBIZOILGAJOICE: 'UWIGISUBIZO OLGA JOYCE',
+  RINGUYENEZASIEFALDIN: 'RINGUYENEZA SEIF AL - DIN',
+  KUNDWAANDRYMALOGLAD: 'KUNDWA ANDY MALO',
+  MUTUYIMANADAYELA: 'MUTUYIMANA AKARABO KEZA DAELLA',
+  IGIHOZOBIGILIMANABRIELLA: 'IGIHOZO B. BRIELLA',
+  NIYOMUKIZAEMEMA: 'NIYOMUKIZA EMIMER',
+  NTWALIHERTIER: 'NTWALI RIOCK HERTIER',
+  NDACYAYISENGAKUNDWASHEMAJUNIORDAGHOBERT: 'NDACYAYISENGA SHEMA JUNIOR',
+  NGANJIDARCYASHAKENDRIK: 'NGANJI DERCY ASHER KENDRICK',
+  YUSAOWENEMMY: 'CYUSA OWEN EMMY',
+  KAYITAREISAROTRECY: 'KAYITARE SARO PRETY',
+  RAMBAELIODARCY: 'GALICIA RAMBA ELIO',
+  RUGWIROSHAMINOLAN: 'ISHAMI RUGWIRO NORA ELLA',
+  IZIBYOSEAIMEJDEDIEU: 'IZIBYOSE AIME JEAN DE DIEU',
   MUCYOYARSIYASSAH: 'MUCYO YASIRI',
   MUCYOYARSINYASSAH: 'MUCYO YASIRI',
   NIYOMUKIZAEMMIMA: 'NIYOMUKIZA EMIMER',
@@ -840,6 +936,14 @@ function payerLabel(payer) {
 // ============================================================================
 // SEED
 // ============================================================================
+// This seed is ADDITIVE and safe to run on a live database. It never drops a
+// collection and never overwrites records that already exist:
+//   - users, classes, academic year, fee structures/items, uniform items +
+//     their stock ledger, inventory and settings are only created when missing;
+//   - the full student / payment history is loaded only when the database has
+//     no students yet.
+// Run `npm run seed` as often as you like: existing data is preserved and only
+// missing defaults (e.g. new uniform items) are added.
 async function run() {
   if (!config.mongoUri) {
     console.error('MONGODB_URI is required to seed the database');
@@ -847,47 +951,65 @@ async function run() {
   }
   await mongoose.connect(config.mongoUri);
   console.log('[seed] Connected to MongoDB');
+  console.log(`[seed] Seeding "${mongoose.connection.name}" additively (existing data is preserved)`);
 
-  // STEP 1: CLEAR EVERYTHING
-  console.log(`[seed] Dropping database "${mongoose.connection.name}" (all existing data)...`);
-  await mongoose.connection.dropDatabase();
-  console.log('[seed] Database cleared.');
-
-  // STEP 2: SYSTEM USERS
-  let admin;
+  // STEP 1: SYSTEM USERS — only the accounts that do not exist yet are created.
+  let admin = null;
   for (const u of SYSTEM_USERS) {
+    const existing = await User.findOne({ username: u.username.toLowerCase() });
+    if (existing) {
+      console.log(`[seed] kept existing ${u.role} -> ${u.email}`);
+      if (u.role === 'SUPER_ADMIN') admin = existing;
+      continue;
+    }
     const created = await User.create(u);
     if (u.role === 'SUPER_ADMIN') admin = created;
-    console.log(`[seed] Created ${u.role} -> ${u.email}`);
+    console.log(`[seed] created ${u.role} -> ${u.email}`);
+  }
+  if (!admin) admin = (await User.findOne({ role: 'SUPER_ADMIN' })) || (await User.findOne({}));
+  if (!admin) {
+    console.error('[seed] No user available to attribute stock movements to');
+    process.exit(1);
   }
 
-  // STEP 3: CLASSES & ACADEMIC YEAR
+  // STEP 2: CLASSES & ACADEMIC YEAR
   const classIds = {};
   let order = 1;
   for (const name of Object.keys(CLASS_FEES)) {
-    const cls = await SchoolClass.create({
-      name,
-      level: name.startsWith('N') ? 'NURSERY' : 'PRIMARY',
-      order: order++,
-    });
+    let cls = await SchoolClass.findOne({ name });
+    if (!cls) {
+      cls = await SchoolClass.create({
+        name,
+        level: name.startsWith('N') ? 'NURSERY' : 'PRIMARY',
+        order,
+      });
+      console.log(`[seed] created class ${name}`);
+    }
     classIds[name] = cls._id;
+    order++;
   }
-  console.log('[seed] School classes initialized');
+  console.log('[seed] School classes ready');
 
-  const year = await AcademicYear.create({
-    name: '2026-2027',
-    startDate: new Date('2026-09-01'),
-    endDate: new Date('2027-08-31'),
-    isActive: true,
-    terms: [
-      { name: 'Term 1', startDate: new Date('2026-09-01'), endDate: new Date('2026-12-18'), status: 'ACTIVE' },
-      { name: 'Term 2', startDate: new Date('2027-01-06'), endDate: new Date('2027-04-02') },
-      { name: 'Term 3', startDate: new Date('2027-04-19'), endDate: new Date('2027-07-10') },
-    ],
-  });
-  console.log('[seed] Academic year 2026-2027 initialized');
+  let year = await AcademicYear.findOne({ name: '2026-2027' });
+  if (!year) {
+    year = await AcademicYear.create({
+      name: '2026-2027',
+      startDate: new Date('2026-09-01'),
+      endDate: new Date('2027-08-31'),
+      isActive: true,
+      terms: [
+        { name: 'Term 1', startDate: new Date('2026-09-01'), endDate: new Date('2026-12-18'), status: 'ACTIVE' },
+        { name: 'Term 2', startDate: new Date('2027-01-06'), endDate: new Date('2027-04-02') },
+        { name: 'Term 3', startDate: new Date('2027-04-19'), endDate: new Date('2027-07-10') },
+      ],
+    });
+    console.log('[seed] Academic year 2026-2027 created');
+  } else {
+    console.log('[seed] Academic year 2026-2027 already exists (kept as is)');
+  }
 
-  // STEP 4: FEE STRUCTURES & ITEMS
+  // STEP 3: FEE STRUCTURES & ITEMS — existing rows are left untouched.
+  let structuresAdded = 0;
   for (const term of ['Term 1', 'Term 2', 'Term 3']) {
     for (const [name, fees] of Object.entries(CLASS_FEES)) {
       const entries = [
@@ -896,23 +1018,29 @@ async function run() {
         ['UNIFORM', fees.uniform],
       ];
       for (const [feeType, amount] of entries) {
-        await FeeStructure.create({
-          academicYear: year._id,
-          term,
-          class: classIds[name],
-          feeType,
-          requiredAmount: amount,
-        });
+        const res = await FeeStructure.updateOne(
+          { academicYear: year._id, term, class: classIds[name], feeType },
+          { $setOnInsert: { requiredAmount: amount, status: 'ACTIVE' } },
+          { upsert: true }
+        );
+        if (res.upsertedCount) structuresAdded++;
       }
     }
   }
-  console.log('[seed] Fee structures configured');
+  console.log(`[seed] Fee structures: ${structuresAdded} added, existing ones kept`);
 
+  let itemsAdded = 0;
+  const ensureFeeItem = async (doc) => {
+    const exists = await FeeItem.findOne({ category: doc.category, name: doc.name });
+    if (exists) return;
+    await FeeItem.create(doc);
+    itemsAdded++;
+  };
   for (const m of MATERIALS) {
-    await FeeItem.create({ category: 'MATERIAL', name: m.name, price: m.price, order: 1 });
+    await ensureFeeItem({ category: 'MATERIAL', name: m.name, price: m.price, order: 1 });
   }
   for (const m of MATERIALS_P45) {
-    await FeeItem.create({
+    await ensureFeeItem({
       category: 'MATERIAL',
       name: `${m.name} (P4/P5)`,
       price: m.price,
@@ -921,15 +1049,23 @@ async function run() {
     });
   }
   for (const [i, u] of UNIFORM_FEE_ITEMS.entries()) {
-    await FeeItem.create({ category: 'UNIFORM', name: u.name, price: u.price, order: i + 1 });
+    await ensureFeeItem({ category: 'UNIFORM', name: u.name, price: u.price, order: i + 1 });
   }
-  console.log('[seed] Fee items ready');
+  console.log(`[seed] Fee items: ${itemsAdded} added, existing ones kept`);
 
   // STEP 5: UNIFORM STOCK (dated deliveries per the 08/10/2026 report)
+  // Sales are written in STEP 9, split per student from the Word list.
+  const stockState = new Map();
+  let uniformItemsAdded = 0;
   for (const [idx, s] of UNIFORM_STOCK.entries()) {
     const quantityIssued = s.sold + s.returned;
     if (s.received - quantityIssued !== s.inStock) {
       console.warn(`[seed] WARNING stock mismatch for ${s.name}: ${s.received} - ${quantityIssued} != ${s.inStock}`);
+    }
+    const found = await UniformItem.findOne({ name: s.name, size: 'FREE', gender: 'UNISEX' });
+    if (found) {
+      console.log(`[seed] kept existing uniform item ${s.name}`);
+      continue;
     }
     const item = await UniformItem.create({
       name: s.name,
@@ -966,15 +1102,6 @@ async function run() {
       date: d.date,
       reason: `${d.label} - L.P.A Rulindo stock report`,
     }));
-    if (s.sold > 0) {
-      movements.push({
-        type: 'ISSUED',
-        qty: s.sold,
-        sign: -1,
-        date: REPORT_DATE,
-        reason: 'Sold to students (IMYENDA YAGURISHIJWE) - L.P.A Rulindo stock report',
-      });
-    }
     if (s.returned > 0) {
       // "Imyenda yasubiyeyo": taken out of stock (stock goes DOWN), so it is
       // stored as ADJUSTMENT rather than RETURNED to avoid being read as +stock.
@@ -1000,16 +1127,26 @@ async function run() {
         performedBy: admin._id,
       });
     }
+    stockState.set(s.name, { item, running, sold: s.sold, inStock: s.inStock });
+    uniformItemsAdded++;
   }
-  console.log('[seed] Uniform stock ledger loaded (deliveries, sales, returns)');
+  console.log(`[seed] Uniform stock: ${uniformItemsAdded} item(s) added with their ledger, existing ones kept`);
 
   // STEP 6: OTHER INVENTORY & SETTINGS
-  await InventoryItem.create([
+  const INVENTORY_ITEMS = [
     { name: 'Kawunga', category: 'FOOD', unit: 'Bags', openingStock: 10, currentStock: 10, minimumStockLevel: 5, unitCost: 12000 },
     { name: 'Exercise Books', category: 'SCHOOL_BOOKS', unit: 'Pieces', openingStock: 500, currentStock: 500, minimumStockLevel: 100, unitCost: 300 },
     { name: 'Pens', category: 'STATIONERY', unit: 'Pieces', openingStock: 1000, currentStock: 1000, minimumStockLevel: 200, unitCost: 100 },
     { name: 'Chalk', category: 'OTHER', unit: 'Boxes', openingStock: 40, currentStock: 40, minimumStockLevel: 10, unitCost: 2500 },
-  ]);
+  ];
+  let inventoryAdded = 0;
+  for (const inv of INVENTORY_ITEMS) {
+    const exists = await InventoryItem.findOne({ name: inv.name });
+    if (exists) continue;
+    await InventoryItem.create(inv);
+    inventoryAdded++;
+  }
+  console.log(`[seed] Inventory items: ${inventoryAdded} added, existing ones kept`);
 
   const defaults = {
     school_name: 'L.P.A RULINDO',
@@ -1022,188 +1159,271 @@ async function run() {
     // Every student who eats at school owes this extra charge per term.
     meal_fee_per_term: 40000,
   };
+  let settingsAdded = 0;
   for (const [key, value] of Object.entries(defaults)) {
+    const existing = await Setting.findOne({ key });
+    if (existing) continue;
     await Setting.set(key, value);
+    settingsAdded++;
   }
-  console.log('[seed] System settings loaded');
+  console.log(`[seed] System settings: ${settingsAdded} added, existing ones kept`);
 
-  // STEP 7: STUDENTS + PAYMENTS
-  const DEFAULT_DATES = {
-    MATERIALS: new Date('2026-09-03'),
-    SCHOOL_FEES: new Date('2026-09-07'),
-    UNIFORM: new Date('2026-09-30'),
-  };
+  // The full student / payment / uniform-sales history is loaded only when the
+  // database has no students yet, so re-running the seed never duplicates it.
+  const hasStudents = (await Student.countDocuments()) > 0;
+  if (hasStudents) {
+    console.log('[seed] Students already present - skipping student, payment and uniform-sales history');
+  } else {
+    // STEP 7: STUDENTS + PAYMENTS
+    const DEFAULT_DATES = {
+      MATERIALS: new Date('2026-09-03'),
+      SCHOOL_FEES: new Date('2026-09-07'),
+      UNIFORM: new Date('2026-09-30'),
+    };
 
-  const rosterIndex = CLASS_ROSTERS.map((r) => ({
-    ...r,
-    _key: normalizeKey(r.name),
-    _tokens: nameTokens(r.name),
-  }));
+    const rosterIndex = CLASS_ROSTERS.map((r) => ({
+      ...r,
+      _key: normalizeKey(r.name),
+      _tokens: nameTokens(r.name),
+    }));
 
-  const txnsByRecord = new Map();
-  const addTxn = (record, txn) => {
-    if (!txnsByRecord.has(record)) txnsByRecord.set(record, []);
-    txnsByRecord.get(record).push(txn);
-  };
-  const unmatched = [];
+    const txnsByRecord = new Map();
+    const addTxn = (record, txn) => {
+      if (!txnsByRecord.has(record)) txnsByRecord.set(record, []);
+      txnsByRecord.get(record).push(txn);
+    };
+    const unmatched = [];
 
-  for (const p of MOMO_PAYMENTS) {
-    const record = findRecord(p.studentName, '', rosterIndex);
-    if (!record) {
-      unmatched.push(`MoMo ${p.date} ${p.studentName} ${p.amount}`);
-      continue;
+    for (const p of MOMO_PAYMENTS) {
+      const record = findRecord(p.studentName, '', rosterIndex);
+      if (!record) {
+        unmatched.push(`MoMo ${p.date} ${p.studentName} ${p.amount}`);
+        continue;
+      }
+      addTxn(record, {
+        method: CHANNEL_METHOD.CODE, // incl. cash deposits listed on the MoMo sheet (reported under CODE)
+        date: new Date(p.date),
+        amount: p.amount,
+        payer: payerLabel(p.payerName),
+      });
     }
-    addTxn(record, {
-      method: CHANNEL_METHOD.CODE, // incl. cash deposits listed on the MoMo sheet (reported under CODE)
-      date: new Date(p.date),
-      amount: p.amount,
-      payer: payerLabel(p.payerName),
-    });
-  }
-  for (const p of EQUITY_PAYMENTS) {
-    const record = findRecord(p.studentName, p.className, rosterIndex);
-    if (!record) {
-      unmatched.push(`Equity ${p.date} ${p.studentName} ${p.amount}`);
-      continue;
+    for (const p of EQUITY_PAYMENTS) {
+      const record = findRecord(p.studentName, p.className, rosterIndex);
+      if (!record) {
+        unmatched.push(`Equity ${p.date} ${p.studentName} ${p.amount}`);
+        continue;
+      }
+      addTxn(record, { method: 'BANK', date: new Date(p.date), amount: p.amount, payer: '' });
     }
-    addTxn(record, { method: 'BANK', date: new Date(p.date), amount: p.amount, payer: '' });
-  }
 
-  const reportByRecord = new Map();
-  let reportTotal = 0;
-  for (const p of REPORT_PAYMENTS) {
-    const record = findRecord(p.studentName, p.className, rosterIndex);
-    if (!record) {
-      unmatched.push(`Report ${p.date} ${p.studentName} ${p.amount} (not in any class sheet)`);
-      continue;
+    const reportByRecord = new Map();
+    let reportTotal = 0;
+    for (const p of REPORT_PAYMENTS) {
+      const record = findRecord(p.studentName, p.className, rosterIndex);
+      if (!record) {
+        unmatched.push(`Report ${p.date} ${p.studentName} ${p.amount} (not in any class sheet)`);
+        continue;
+      }
+      if (!reportByRecord.has(record)) reportByRecord.set(record, []);
+      reportByRecord.get(record).push({
+        method: CHANNEL_METHOD[p.channel],
+        date: new Date(p.date),
+        amount: p.amount,
+        payer: 'Daily report',
+      });
+      reportTotal += p.amount;
     }
-    if (!reportByRecord.has(record)) reportByRecord.set(record, []);
-    reportByRecord.get(record).push({
-      method: CHANNEL_METHOD[p.channel],
-      date: new Date(p.date),
-      amount: p.amount,
-      payer: 'Daily report',
-    });
-    reportTotal += p.amount;
-  }
-  const overpaidList = [];
+    const overpaidList = [];
 
-  const channelByRecord = new Map();
-  for (const c of PAYMENT_CHANNELS) {
-    const record = findRecord(c.name, c.className, rosterIndex);
-    if (record) channelByRecord.set(record, c);
-    else unmatched.push(`Channel list ${c.name}`);
-  }
-
-  // School feeding: who eats at school, plus their MEALS payments.
-  const mealByRecord = new Map();
-  for (const m of MEAL_FEEDING_LIST) {
-    const record = findRecord(m.rosterName, m.className, rosterIndex);
-    if (!record) {
-      unmatched.push(`Meal list ${m.rosterName}`);
-      continue;
+    const channelByRecord = new Map();
+    for (const c of PAYMENT_CHANNELS) {
+      const record = findRecord(c.name, c.className, rosterIndex);
+      if (record) channelByRecord.set(record, c);
+      else unmatched.push(`Channel list ${c.name}`);
     }
-    mealByRecord.set(record, m);
-  }
 
-  const receiptPrefix = await Setting.get('receipt_prefix', 'RCT');
-  const uniformPayments = [];
-  let paymentCount = 0;
-  let mealCount = 0;
-  let mealTotal = 0;
+    // School feeding: who eats at school, plus their MEALS payments.
+    const mealByRecord = new Map();
+    for (const m of MEAL_FEEDING_LIST) {
+      const record = findRecord(m.rosterName, m.className, rosterIndex);
+      if (!record) {
+        unmatched.push(`Meal list ${m.rosterName}`);
+        continue;
+      }
+      mealByRecord.set(record, m);
+    }
 
-  for (const record of rosterIndex) {
-    const { firstName, lastName } = nameParts(record.name);
-    const student = await Student.create({
-      studentId: `STU-2026-${pad(await nextSequence('student'), 4)}`,
-      firstName,
-      lastName,
-      gender: inferGender(record.name),
-      class: classIds[record.className],
-      academicYear: year._id,
-      term: 'Term 1',
-      fatherPhone: record.fatherPhone || '',
-      motherPhone: record.motherPhone || '',
-      status: 'ACTIVE',
-      eatsAtSchool: mealByRecord.has(record),
-    });
+    const studentByRecord = new Map();
+    const receiptPrefix = await Setting.get('receipt_prefix', 'RCT');
+    const uniformPayments = [];
+    let paymentCount = 0;
+    let mealCount = 0;
+    let mealTotal = 0;
 
-    const plan = allocatePayments(
-      record,
-      txnsByRecord.get(record) || [],
-      channelByRecord.get(record),
-      DEFAULT_DATES,
-    );
-
-    const extra = allocateReportPayments(record, reportByRecord.get(record) || []);
-    if (extra.overpaid > 0) overpaidList.push(`${record.className} ${record.name}: +${extra.overpaid}`);
-    plan.push(...extra.plan);
-
-    for (const item of plan) {
-      if (item.amount <= 0) continue;
-      const payment = await Payment.create({
-        receiptNumber: `${receiptPrefix}-${item.date.getFullYear()}-${pad(await nextSequence('receipt'), 6)}`,
-        student: student._id,
+    for (const record of rosterIndex) {
+      const { firstName, lastName } = nameParts(record.name);
+      const student = await Student.create({
+        studentId: `STU-2026-${pad(await nextSequence('student'), 4)}`,
+        firstName,
+        lastName,
+        gender: inferGender(record.name),
+        class: classIds[record.className],
         academicYear: year._id,
         term: 'Term 1',
-        feeType: item.feeType,
-        amount: item.amount,
-        paymentMethod: item.method,
-        paymentDate: item.date,
-        recordedBy: admin._id,
+        fatherPhone: record.fatherPhone || '',
+        motherPhone: record.motherPhone || '',
         status: 'ACTIVE',
-        note: item.payer ? `Payer: ${item.payer}` : '',
+        eatsAtSchool: mealByRecord.has(record),
       });
-      if (item.feeType === 'UNIFORM') uniformPayments.push(payment);
-      paymentCount++;
+      studentByRecord.set(record, student);
+
+      const plan = allocatePayments(
+        record,
+        txnsByRecord.get(record) || [],
+        channelByRecord.get(record),
+        DEFAULT_DATES,
+      );
+
+      const extra = allocateReportPayments(record, reportByRecord.get(record) || []);
+      if (extra.overpaid > 0) overpaidList.push(`${record.className} ${record.name}: +${extra.overpaid}`);
+      plan.push(...extra.plan);
+
+      for (const item of plan) {
+        if (item.amount <= 0) continue;
+        const payment = await Payment.create({
+          receiptNumber: `${receiptPrefix}-${item.date.getFullYear()}-${pad(await nextSequence('receipt'), 6)}`,
+          student: student._id,
+          academicYear: year._id,
+          term: 'Term 1',
+          feeType: item.feeType,
+          amount: item.amount,
+          paymentMethod: item.method,
+          paymentDate: item.date,
+          recordedBy: admin._id,
+          status: 'ACTIVE',
+          note: item.payer ? `Payer: ${item.payer}` : '',
+        });
+        if (item.feeType === 'UNIFORM') uniformPayments.push(payment);
+        paymentCount++;
+      }
+
+      // School feeding payment (MEALS) — tracked separately from fees/materials/uniform.
+      const meal = mealByRecord.get(record);
+      if (meal && meal.amount > 0) {
+        const mealDate = new Date(MEAL_LIST_DATE);
+        await Payment.create({
+          receiptNumber: `${receiptPrefix}-${mealDate.getFullYear()}-${pad(await nextSequence('receipt'), 6)}`,
+          student: student._id,
+          academicYear: year._id,
+          term: 'Term 1',
+          feeType: 'MEALS',
+          amount: meal.amount,
+          paymentMethod: meal.method,
+          paymentDate: mealDate,
+          recordedBy: admin._id,
+          status: 'ACTIVE',
+          note: `School feeding (URUTONDE RW'ABANA BARIRA MU KIGO). ${meal.payer ? `Payer: ${meal.payer}` : ''}`.trim(),
+        });
+        mealCount++;
+        mealTotal += meal.amount;
+      }
+    }
+    console.log(`[seed] Loaded ${rosterIndex.length} students and ${paymentCount} payments`);
+    console.log(`[seed] School feeding: ${mealByRecord.size} students eat at school (${mealCount} MEALS payments, ${mealTotal} FRW recorded)`);
+    console.log(`[seed] Daily/weekly report payments added on top of class sheets: ${reportTotal} FRW`);
+    if (overpaidList.length) {
+      console.log('[seed] Paid more than materials + school fees (kept as advance on SCHOOL_FEES):');
+      overpaidList.forEach((o) => console.log(`        - ${o}`));
+    }
+    if (unmatched.length) {
+      console.log(`[seed] ${unmatched.length} payment lines could not be tied to a student (kept out of the totals):`);
+      unmatched.forEach((u) => console.log(`        - ${u}`));
     }
 
-    // School feeding payment (MEALS) — tracked separately from fees/materials/uniform.
-    const meal = mealByRecord.get(record);
-    if (meal && meal.amount > 0) {
-      const mealDate = new Date(MEAL_LIST_DATE);
-      await Payment.create({
-        receiptNumber: `${receiptPrefix}-${mealDate.getFullYear()}-${pad(await nextSequence('receipt'), 6)}`,
-        student: student._id,
+    // STEP 8: UNIFORM ENTITLEMENTS
+    let entitlementCount = 0;
+    for (const payment of uniformPayments) {
+      const student = await Student.findById(payment.student);
+      const created = await refreshUniformEntitlements({
+        student,
         academicYear: year._id,
         term: 'Term 1',
-        feeType: 'MEALS',
-        amount: meal.amount,
-        paymentMethod: meal.method,
-        paymentDate: mealDate,
-        recordedBy: admin._id,
-        status: 'ACTIVE',
-        note: `School feeding (URUTONDE RW'ABANA BARIRA MU KIGO). ${meal.payer ? `Payer: ${meal.payer}` : ''}`.trim(),
+        payment,
       });
-      mealCount++;
-      mealTotal += meal.amount;
+      entitlementCount += created.length;
     }
-  }
-  console.log(`[seed] Loaded ${rosterIndex.length} students and ${paymentCount} payments`);
-  console.log(`[seed] School feeding: ${mealByRecord.size} students eat at school (${mealCount} MEALS payments, ${mealTotal} FRW recorded)`);
-  console.log(`[seed] Daily/weekly report payments added on top of class sheets: ${reportTotal} FRW`);
-  if (overpaidList.length) {
-    console.log('[seed] Paid more than materials + school fees (kept as advance on SCHOOL_FEES):');
-    overpaidList.forEach((o) => console.log(`        - ${o}`));
-  }
-  if (unmatched.length) {
-    console.log(`[seed] ${unmatched.length} payment lines could not be tied to a student (kept out of the totals):`);
-    unmatched.forEach((u) => console.log(`        - ${u}`));
-  }
+    console.log(`[seed] Built ${entitlementCount} uniform entitlements`);
 
-  // STEP 8: UNIFORM ENTITLEMENTS
-  let entitlementCount = 0;
-  for (const payment of uniformPayments) {
-    const student = await Student.findById(payment.student);
-    const created = await refreshUniformEntitlements({
-      student,
-      academicYear: year._id,
-      term: 'Term 1',
-      payment,
-    });
-    entitlementCount += created.length;
+    // STEP 9: UNIFORMS TAKEN BY EACH STUDENT (UKO ABANYESHURI BAFASHE IMYENDA)
+    // Every item a child took is written as its own ISSUED movement naming the
+    // child. The stock sheet's "sold" figure stays the authority for the totals:
+    //  - sold > itemised  -> the difference is one "not itemised" ISSUED line
+    //  - itemised > sold  -> a RECEIVED correction (clearly labelled) is added
+    // so the final balance of every item equals the report's "in stock" figure.
+    const REPORT_DATE_SALES = '2026-10-08';
+    const takenEvents = [];
+    const takenUnmatched = [];
+    const takenNoPayment = new Set();
+    for (const row of UNIFORM_TAKEN) {
+      const record = findRecord(row.name, '', rosterIndex);
+      const student = record ? studentByRecord.get(record) : null;
+      if (!record) takenUnmatched.push(`#${row.no} ${row.name} (${row.items})`);
+      if (record && !(record.uniformPaid > 0)) takenNoPayment.add(`${record.className} ${record.name}`);
+      for (const code of row.items.split(/\s+/).filter(Boolean)) {
+        takenEvents.push({
+          no: row.no,
+          itemName: UNIFORM_CODES[code],
+          who: record
+            ? `${record.name} (${student.studentId}, ${record.className})`
+            : `${row.name} (not found in any class sheet)`,
+        });
+      }
+    }
+
+    let issuedLines = 0;
+    console.log('[seed] Uniform sales: stock report vs Word list (per student)');
+    for (const [name, st] of stockState) {
+      const evs = takenEvents.filter((e) => e.itemName === name);
+      const d = evs.length;
+      let running = st.running;
+      const write = async (type, qty, date, reason) => {
+        running += type === 'RECEIVED' ? qty : -qty;
+        await UniformStockTransaction.create({
+          uniformItem: st.item._id,
+          type,
+          quantity: qty,
+          balanceAfter: running,
+          date: new Date(date),
+          reason: `Seed: ${reason}`,
+          performedBy: admin._id,
+        });
+        issuedLines++;
+      };
+      if (st.sold > d) {
+        await write('ISSUED', st.sold - d, REPORT_DATE_SALES, 'Sold to students (IMYENDA YAGURISHIJWE), not itemised per student - L.P.A Rulindo stock report');
+      }
+      if (d > st.sold) {
+        await write('RECEIVED', d - st.sold, UNIFORM_TAKEN_DATE, `Stock correction: Word list shows ${d} taken but the stock report says ${st.sold} sold`);
+      }
+      for (const e of evs) {
+        await write('ISSUED', 1, UNIFORM_TAKEN_DATE, `Taken by ${e.who} - UKO ABANYESHURI BAFASHE IMYENDA #${e.no}`);
+      }
+      if (running !== st.inStock) {
+        console.warn(`[seed] WARNING ${name}: ledger ends at ${running}, stock report says ${st.inStock}`);
+      }
+      console.log(`        ${name.padEnd(18)} report sold ${String(st.sold).padStart(3)} | per student ${String(d).padStart(3)} | not itemised ${String(Math.max(0, st.sold - d)).padStart(3)}${d > st.sold ? ` | correction +${d - st.sold}` : ''}`);
+    }
+    console.log(`[seed] ${takenEvents.length} uniform items recorded against ${UNIFORM_TAKEN.length} Word-list lines (${issuedLines} ledger lines)`);
+    if (takenUnmatched.length) {
+      console.log('[seed] Took uniform but not found in any class sheet (still deducted from stock):');
+      takenUnmatched.forEach((u) => console.log(`        - ${u}`));
+    }
+    if (takenNoPayment.size) {
+      console.log(`[seed] Took uniform items but have NO uniform payment in the class sheet (${takenNoPayment.size}):`);
+      [...takenNoPayment].forEach((u) => console.log(`        - ${u}`));
+    }
+
   }
-  console.log(`[seed] Built ${entitlementCount} uniform entitlements`);
 
   const classCounts = await Student.aggregate([
     { $group: { _id: '$class', count: { $sum: 1 } } },
@@ -1213,11 +1433,11 @@ async function run() {
   ]);
   console.log('[seed] Students per class:', classCounts.map((c) => `${c.name}=${c.count}`).join(', '));
 
-  console.log('[seed] Done -> L.P.A RULINDO seeded with real data');
+  console.log('[seed] Done -> L.P.A RULINDO data is ready (existing records preserved, nothing deleted)');
   await mongoose.disconnect();
 }
 
 run().catch((err) => {
   console.error('[seed] Database seeding failed:', err);
   process.exit(1);
-});
+}); 

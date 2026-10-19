@@ -8,6 +8,31 @@ import { recordAudit, diffObjects } from '../services/auditService.js';
 import { notify } from '../services/notificationService.js';
 import { batchFeeSummaries, getStudentFeeSummary, paymentStatusFor } from '../services/feeService.js';
 
+// Accepts the per-student fee overrides (discounts) sent by the client:
+// { MATERIALS: 20000, SCHOOL_FEES: null, ... }. Values are null (standard
+// amount) or a number >= 0. Anything else is rejected.
+function sanitizeFeeOverrides(input) {
+  if (input === undefined || input === null) return undefined;
+  if (typeof input !== 'object' || Array.isArray(input)) {
+    throw new ApiError(400, 'Fee overrides must be an object of amounts');
+  }
+  const out = {};
+  for (const key of ['SCHOOL_FEES', 'MATERIALS', 'MEALS', 'UNIFORM', 'OTHER']) {
+    const raw = input[key];
+    if (raw === undefined) continue;
+    if (raw === null || raw === '') {
+      out[key] = null;
+      continue;
+    }
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0) {
+      throw new ApiError(400, `The discount amount for ${key.replace('_', ' ')} must be zero or more`);
+    }
+    out[key] = n;
+  }
+  return out;
+}
+
 export const listStudents = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const filter = {};
@@ -39,6 +64,9 @@ export const listStudents = asyncHandler(async (req, res) => {
 });
 
 export const getStudent = asyncHandler(async (req, res) => {
+  // A non-ObjectId :id (e.g. an old client build calling /students/meals before
+  // that route existed) must 404 cleanly instead of a Mongoose CastError.
+  if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'Student not found');
   const student = await Student.findById(req.params.id)
     .populate('class', 'name level')
     .populate('academicYear', 'name');
@@ -56,6 +84,8 @@ export const createStudent = asyncHandler(async (req, res) => {
   if (!firstName || !lastName || !gender || !classId || !academicYear || !term) {
     throw new ApiError(400, 'First name, last name, gender, class, academic year and term are required');
   }
+
+  const feeOverrides = sanitizeFeeOverrides(req.body.feeOverrides);
 
   let id = studentId?.trim().toUpperCase();
   if (id) {
@@ -77,6 +107,7 @@ export const createStudent = asyncHandler(async (req, res) => {
     term,
     status: status || 'ACTIVE',
     eatsAtSchool: !!eatsAtSchool,
+    ...(feeOverrides ? { feeOverrides } : {}),
     motherPhone: motherPhone || '',
     fatherPhone: fatherPhone || '',
     photo: photo || '',
@@ -166,13 +197,29 @@ export const listMealStudents = asyncHandler(async (req, res) => {
 });
 
 export const updateStudent = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'Student not found');
   const doc = await Student.findById(req.params.id);
   if (!doc) throw new ApiError(404, 'Student not found');
   const before = doc.toObject();
 
-  const allowed = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'class', 'academicYear', 'term', 'status', 'motherPhone', 'fatherPhone', 'photo', 'notes', 'eatsAtSchool'];
+  const allowed = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'class', 'academicYear', 'term', 'status', 'motherPhone', 'fatherPhone', 'photo', 'notes', 'eatsAtSchool', 'feeOverrides'];
   for (const key of allowed) {
-    if (req.body[key] !== undefined) doc[key] = req.body[key] === '' && ['motherPhone', 'fatherPhone', 'photo', 'notes'].includes(key) ? '' : req.body[key];
+    if (key === 'feeOverrides' || req.body[key] === undefined) continue;
+    doc[key] = req.body[key] === '' && ['motherPhone', 'fatherPhone', 'photo', 'notes'].includes(key) ? '' : req.body[key];
+  }
+
+  // Per-student discounts: merge so a single fee can be changed without
+  // touching the others; an explicit null clears that discount.
+  const feeOverrides = sanitizeFeeOverrides(req.body.feeOverrides);
+  if (feeOverrides) {
+    const current = doc.feeOverrides?.toObject?.() || doc.feeOverrides || {};
+    doc.feeOverrides = {
+      SCHOOL_FEES: feeOverrides.SCHOOL_FEES !== undefined ? feeOverrides.SCHOOL_FEES : current.SCHOOL_FEES ?? null,
+      MATERIALS: feeOverrides.MATERIALS !== undefined ? feeOverrides.MATERIALS : current.MATERIALS ?? null,
+      MEALS: feeOverrides.MEALS !== undefined ? feeOverrides.MEALS : current.MEALS ?? null,
+      UNIFORM: feeOverrides.UNIFORM !== undefined ? feeOverrides.UNIFORM : current.UNIFORM ?? null,
+      OTHER: feeOverrides.OTHER !== undefined ? feeOverrides.OTHER : current.OTHER ?? null,
+    };
   }
 
   await doc.save();

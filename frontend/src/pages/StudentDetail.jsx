@@ -87,7 +87,18 @@ export default function StudentDetail() {
                     {r.optional && <span className="ml-2 rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-xs font-normal text-gray-500 dark:text-gray-400">optional</span>}
                   </span>
                 ) },
-                { key: 'required', label: 'Required', className: 'text-right', render: (r) => money(r.required) },
+                { key: 'required', label: 'Required', className: 'text-right', render: (r) => (
+                  <div>
+                    <div className={r.discounted ? 'font-medium text-amber-700 dark:text-amber-400' : ''}>{money(r.required)}</div>
+                    {r.discounted && (
+                      <div className="text-xs text-gray-400 dark:text-gray-500">
+                        <span className="line-through">{money(r.standardAmount)}</span>
+                        {' '}
+                        <span className="rounded bg-amber-100 dark:bg-amber-950/60 px-1 py-0.5 font-medium text-amber-700 dark:text-amber-400">discount</span>
+                      </div>
+                    )}
+                  </div>
+                ) },
                 { key: 'paid', label: 'Paid', className: 'text-right', render: (r) => money(r.paid) },
                 { key: 'balance', label: 'Balance', className: 'text-right font-medium', render: (r) => money(r.balance) },
                 { key: 'status', label: 'Status', render: (r) => <Badge className={statusColor(r.status)}>{r.status.replace('_', ' ')}</Badge> },

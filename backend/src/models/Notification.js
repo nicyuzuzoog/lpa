@@ -7,6 +7,7 @@ export const NOTIFICATION_TYPES = [
   'UNIFORM',
   'USER',
   'REPORT',
+  'REMINDER',
   'SYSTEM',
 ];
 

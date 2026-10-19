@@ -120,11 +120,17 @@ If the API is hosted elsewhere, set `VITE_API_URL` to its base URL (without `/ap
 
 ## 5. Roles & permissions
 
-| Permission | SUPER_ADMIN | ACCOUNTANT | BIG_BOSS |
-| --- | :-: | :-: | :-: |
-| dashboard, students (read), classes (read), fees (read), payments (read), inventory (read), uniforms (read), reports, notifications, audit, settings (read) | ✅ | ✅ | ✅ |
-| students (create/update), payments (create/correct/reverse), fees items, inventory & uniforms manage/issue | ✅ | ✅ | ❌ |
-| classes & academic years manage, fee structures, users, settings | ✅ | ❌ | ❌ |
+| Permission | SUPER_ADMIN | ACCOUNTANT | BIG_BOSS | TEACHER |
+| --- | :-: | :-: | :-: | :-: |
+| dashboard, students (read), classes (read), fees (read), payments (read), inventory (read), uniforms (read), reports, notifications (read), audit, settings (read) | ✅ | ✅ | ✅ | ✅ |
+| students (create/update), payments (create/correct/reverse), fees items, inventory & uniforms manage/issue | ✅ | ✅ | ❌ | ❌ |
+| classes & academic years manage, fee structures, users (read/manage), notifications (send), settings | ✅ | ❌ | ❌ | ❌ |
+| teachers (manage), user delete | ✅ (only Super Admin) | ❌ | ❌ | ❌ |
+
+Notes:
+- **No user deletion:** The API blocks `DELETE /api/users/:id` (permission `users:delete` is not granted to any role). Disable accounts instead (`status = DISABLED`) so that receipts, payments and the audit trail remain intact.
+- **Teacher records:** Only the Super Admin can manage teachers (create/update/assign). Accountants cannot delete or edit teacher records.
+- **Seed data:** `npm run seed` is **additive and non-destructive** — it never drops the database. It only creates missing defaults (users, classes, academic year, fee structures/items, uniform stock, inventory, settings). The full student, payment and uniform-sales history is seeded **only** when the database has no students. Existing data is preserved, and it can be run repeatedly safely.
 
 Roles can only change through the Super Admin (no self-promotion).
 

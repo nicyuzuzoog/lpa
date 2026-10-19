@@ -14,6 +14,17 @@ const studentSchema = new mongoose.Schema(
     term: { type: String, required: true },
     status: { type: String, enum: STUDENT_STATUSES, default: 'ACTIVE' },
     eatsAtSchool: { type: Boolean, default: false },
+    // Per-student fee overrides (discounts). When a value is set it replaces
+    // the class fee-structure amount for that fee type; null = standard amount.
+    // Example: a child who pays less for supplies has MATERIALS set (e.g. 20000
+    // instead of the class amount of 30000/35000).
+    feeOverrides: {
+      SCHOOL_FEES: { type: Number, default: null, min: 0 },
+      MATERIALS: { type: Number, default: null, min: 0 },
+      MEALS: { type: Number, default: null, min: 0 },
+      UNIFORM: { type: Number, default: null, min: 0 },
+      OTHER: { type: Number, default: null, min: 0 },
+    },
     motherPhone: { type: String, trim: true, default: '' },
     fatherPhone: { type: String, trim: true, default: '' },
     photo: { type: String, default: '' },

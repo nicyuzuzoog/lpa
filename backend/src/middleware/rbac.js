@@ -43,10 +43,15 @@ export const PERMISSIONS = {
   'export': ALL,
 
   'notifications:read': STAFF,
+  // Sending reminders is limited to the Super Admin and the Accountant.
+  'notifications:send': ['SUPER_ADMIN', 'ACCOUNTANT'],
   'audit:read': ALL,
 
   'users:read': ['SUPER_ADMIN'],
   'users:manage': ['SUPER_ADMIN'],
+  // User accounts are never deleted (they are disabled instead so the audit
+  // trail stays intact). No role is granted this permission on purpose.
+  'users:delete': [],
   'settings:read': ALL,
   'settings:manage': ['SUPER_ADMIN'],
 };
