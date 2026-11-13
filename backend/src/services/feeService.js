@@ -45,8 +45,13 @@ function allocateWaterfall(obligations, totalPaid) {
   for (const o of obligations) if (!ordered.includes(o)) ordered.push(o);
   const result = {};
   let remaining = totalPaid;
-  ordered.forEach((o, i) => {
-    const applied = i === ordered.length - 1 ? remaining : Math.min(remaining, o.required);
+  // The lowest-priority obligation absorbs any overpayment so a family's extra
+  // money is still visible. MEALS is a fixed charge and must never be shown as
+  // overpaid, so it is never the absorber (its share is capped at its required).
+  let absorber = ordered.length ? ordered[ordered.length - 1] : null;
+  if (absorber && absorber.feeType === 'MEALS') absorber = null;
+  ordered.forEach((o) => {
+    const applied = o === absorber ? remaining : Math.min(remaining, o.required);
     result[o.feeType] = applied;
     remaining -= applied;
   });

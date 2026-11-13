@@ -75,6 +75,11 @@ export const createUser = asyncHandler(async (req, res) => {
   if (!fullName || !username || !password) throw new ApiError(400, 'Full name, username and password are required');
   if (password.length < 6) throw new ApiError(400, 'Password must be at least 6 characters');
   if (!ROLES.includes(role)) throw new ApiError(400, 'Invalid role');
+  // Only the Super Admin may mint another Super Admin, so an Accountant can
+  // never hand out administrator rights.
+  if (role === 'SUPER_ADMIN' && req.user.role !== 'SUPER_ADMIN') {
+    throw new ApiError(403, 'Only the Super Admin can create another Super Admin account');
+  }
 
   const exists = await User.findOne({ username: username.toLowerCase().trim() });
   if (exists) throw new ApiError(409, 'This username is already taken');
@@ -178,15 +183,47 @@ export const updateUser = asyncHandler(async (req, res) => {
   res.json({ success: true, user: user.toSafeJSON() });
 });
 
-// User accounts are never deleted: disabling keeps receipts, payments and the
-// audit trail pointing at a real user. This endpoint exists only to answer any
-// old client with a clear message instead of a confusing 404.
+// Super Admin only: an account can be removed outright (disabling it is still
+// available through PUT /users/:id). Records that mention the user keep their
+// id, so receipts, payments and audit entries stay intact and simply show no
+// linked name anymore. Your own account and the last active Super Admin are
+// protected so nobody can lock themselves out.
 export const deleteUser = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) throw new ApiError(404, 'User not found');
   const user = await User.findById(req.params.id);
   if (!user) throw new ApiError(404, 'User not found');
-  throw new ApiError(
-    403,
-    'User accounts cannot be deleted. Set the account status to "Disabled" instead so records stay intact.'
-  );
+
+  if (req.user._id.equals(user._id)) throw new ApiError(400, 'You cannot delete your own account');
+  if (user.role === 'SUPER_ADMIN') {
+    const otherAdmins = await User.countDocuments({
+      role: 'SUPER_ADMIN',
+      status: 'ACTIVE',
+      _id: { $ne: user._id },
+    });
+    if (otherAdmins === 0) throw new ApiError(400, 'The last active Super Admin account cannot be deleted');
+  }
+
+  const snapshot = { fullName: user.fullName, username: user.username, role: user.role, status: user.status };
+
+  // Drop the account itself (payments, receipts and audit logs keep working
+  // because they only store this user's id).
+  await user.deleteOne();
+
+  await recordAudit({
+    user: req.user,
+    action: 'DELETE',
+    module: 'USERS',
+    recordId: user._id,
+    recordLabel: user.username,
+    oldValue: snapshot,
+  });
+  await notify({
+    title: 'User deleted',
+    message: `${user.fullName} (@${user.username}) was deleted by ${req.user.fullName}`,
+    type: 'USER',
+    createdBy: req.user._id,
+    audienceRoles: ['SUPER_ADMIN'],
+  });
+
+  res.json({ success: true, message: `${user.fullName} was deleted` });
 });

@@ -7,9 +7,10 @@ const router = Router();
 
 router.use(requireAuth);
 router.get('/', requirePermission('users:read'), listUsers);
-router.post('/', requirePermission('users:manage'), createUser);
+// The Accountant can add users; only the Super Admin can change them.
+router.post('/', requirePermission('users:create'), createUser);
 router.put('/:id', requirePermission('users:manage'), updateUser);
-// No role holds 'users:delete': accounts are disabled, never removed.
+// Super Admin only: an account may be deleted, or simply disabled via PUT.
 router.delete('/:id', requirePermission('users:delete'), deleteUser);
 
 export default router;

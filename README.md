@@ -115,7 +115,7 @@ If the API is hosted elsewhere, set `VITE_API_URL` to its base URL (without `/ap
 | `GET /reports/*` | `reports:read` | all reports |
 | `GET /notifications` | `notifications:read` | inbox |
 | `GET /audit-logs` | `audit:read` | immutable audit trail |
-| `GET/PUT /users` | `users:read/manage` | manage users (SUPER_ADMIN only) |
+| `GET/POST/PUT/DELETE /users` | `users:read/create/manage/delete` | list & add users (SUPER_ADMIN, ACCOUNTANT); edit/disable/delete (SUPER_ADMIN only) |
 | `GET/PUT /settings` | `settings:read/manage` | school settings / receipt details |
 
 ## 5. Roles & permissions
@@ -124,13 +124,16 @@ If the API is hosted elsewhere, set `VITE_API_URL` to its base URL (without `/ap
 | --- | :-: | :-: | :-: | :-: |
 | dashboard, students (read), classes (read), fees (read), payments (read), inventory (read), uniforms (read), reports, notifications (read), audit, settings (read) | ✅ | ✅ | ✅ | ✅ |
 | students (create/update), payments (create/correct/reverse), fees items, inventory & uniforms manage/issue | ✅ | ✅ | ❌ | ❌ |
-| classes & academic years manage, fee structures, users (read/manage), notifications (send), settings | ✅ | ❌ | ❌ | ❌ |
-| teachers (manage), user delete | ✅ (only Super Admin) | ❌ | ❌ | ❌ |
+| classes & academic years manage, fee structures, notifications (send), settings | ✅ | ❌ | ❌ | ❌ |
+| users read/create | ✅ | ✅ | ❌ | ❌ |
+| users edit/disable/delete, teachers (manage) | ✅ (only Super Admin) | ❌ | ❌ | ❌ |
 
 Notes:
-- **No user deletion:** The API blocks `DELETE /api/users/:id` (permission `users:delete` is not granted to any role). Disable accounts instead (`status = DISABLED`) so that receipts, payments and the audit trail remain intact.
+- **Who can manage users:** both the Super Admin and the Accountant can **add** users and view the list. Only the Super Admin can **edit** a user, **disable/enable** an account, or **delete** it. The Accountant can neither edit nor delete.
+- **User deletion:** the Super Admin may hard-delete a user (`DELETE /api/users/:id`, permission `users:delete`). Two accounts are protected — you cannot delete yourself, and you cannot delete the last active Super Admin. Prefer **disabling** (`status = DISABLED`) when you want to keep receipts, payments and the audit trail attached to the account.
+- **Only the Super Admin can create another Super Admin** — the Accountant's role dropdown never offers that option, and the API rejects it.
 - **Teacher records:** Only the Super Admin can manage teachers (create/update/assign). Accountants cannot delete or edit teacher records.
-- **Seed data:** `npm run seed` is **additive and non-destructive** — it never drops the database. It only creates missing defaults (users, classes, academic year, fee structures/items, uniform stock, inventory, settings). The full student, payment and uniform-sales history is seeded **only** when the database has no students. Existing data is preserved, and it can be run repeatedly safely.
+- **Seed data:** `npm run seed` is **additive and non-destructive** for people and money — it never drops the database and only creates missing defaults (users, classes, academic year, fee structures/items, inventory, settings). The full student, payment and uniform-sales history is seeded **only** when the database has no students. The one exception is the **uniform dataset**: if the uniform items in the database are not exactly the 8 articles of "RAPORO Y'IMYENDA YAKIRIWE, IYATANZWE N'IYASIGAYE I BWERAMVURA", the seed removes the old uniform items, stock movements, issuances and entitlements and loads that report instead (uniform issuances point at the old items, so they cannot be kept). Once the report is loaded, later runs leave the live stock untouched. Existing non-uniform data is always preserved.
 
 Roles can only change through the Super Admin (no self-promotion).
 

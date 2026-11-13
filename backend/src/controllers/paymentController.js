@@ -128,9 +128,12 @@ export const createPayment = asyncHandler(async (req, res) => {
   if (!studentRef || !feeType || !paymentMethod) throw new ApiError(400, 'Student, fee type and payment method are required');
   if (amount === undefined || amount === null || Number.isNaN(Number(amount))) throw new ApiError(400, 'Payment amount is required');
   if (Number(amount) <= 0) throw new ApiError(400, 'Payment amount cannot be zero or negative');
+  if (!Number.isInteger(Number(amount))) throw new ApiError(400, 'Payment amount must be a whole number');
 
-  if (['BANK', 'MOBILE_MONEY'].includes(paymentMethod) && !String(payerName || '').trim()) {
-    throw new ApiError(400, 'Enter the name of the person who paid (required for bank and mobile money payments)');
+  // The depositor ("Paid by") is captured on every payment so the receipt and
+  // the payments list always show who actually paid.
+  if (!String(payerName || '').trim()) {
+    throw new ApiError(400, 'Enter the name of the person who paid');
   }
 
   const student = await Student.findById(studentRef).populate('class', 'name').populate('academicYear', 'name');
@@ -151,6 +154,19 @@ export const createPayment = asyncHandler(async (req, res) => {
   const required = await requiredFor(student, feeType);
   const settledBefore = await settledPaidFor(student, feeType);
   const balanceBefore = required - settledBefore;
+
+  // School feeding is a fixed charge (default 40,000 RWF/term): a meal payment
+  // may never exceed what the student still owes for meals. The remainder of a
+  // family's money must be recorded against another fee type.
+  if (feeType === 'MEALS' && Number(amount) > balanceBefore) {
+    throw new ApiError(
+      400,
+      balanceBefore > 0
+        ? `A meal payment cannot exceed the outstanding meal balance of ${balanceBefore.toLocaleString('en-US')} RWF`
+        : 'This student has no outstanding meal balance to pay'
+    );
+  }
+
   const settledAfter = await settledPaidFor(student, feeType, { extraAmount: Number(amount) });
   const balanceAfter = required - settledAfter;
 
@@ -267,8 +283,9 @@ export const updatePayment = asyncHandler(async (req, res) => {
   const allowed = ['amount', 'paymentMethod', 'paymentDate', 'feeType', 'note', 'payerName', 'dueDate'];
   for (const key of allowed) if (req.body[key] !== undefined && req.body[key] !== '') doc[key] = req.body[key];
   if (Number(doc.amount) <= 0) throw new ApiError(400, 'Payment amount cannot be negative');
-  if (['BANK', 'MOBILE_MONEY'].includes(doc.paymentMethod) && !String(doc.payerName || '').trim()) {
-    throw new ApiError(400, 'Enter the name of the person who paid (required for bank and mobile money payments)');
+  if (!Number.isInteger(Number(doc.amount))) throw new ApiError(400, 'Payment amount must be a whole number');
+  if (!String(doc.payerName || '').trim()) {
+    throw new ApiError(400, 'Enter the name of the person who paid');
   }
 
   const changes = diffObjects(before, doc.toObject(), allowed);
@@ -278,6 +295,16 @@ export const updatePayment = asyncHandler(async (req, res) => {
   const required = await requiredFor(student, doc.feeType);
   const otherPaid = await settledPaidFor(student, doc.feeType, { excludePaymentId: doc._id });
   doc.balanceBefore = required - otherPaid;
+
+  if (doc.feeType === 'MEALS' && Number(doc.amount) > doc.balanceBefore) {
+    throw new ApiError(
+      400,
+      doc.balanceBefore > 0
+        ? `A meal payment cannot exceed the outstanding meal balance of ${doc.balanceBefore.toLocaleString('en-US')} RWF`
+        : 'This student has no outstanding meal balance to pay'
+    );
+  }
+
   doc.balanceAfter = required - (await settledPaidFor(student, doc.feeType, { excludePaymentId: doc._id, extraAmount: Number(doc.amount) }));
 
   if (doc.balanceAfter > 0 && !doc.dueDate) {

@@ -47,11 +47,15 @@ export const PERMISSIONS = {
   'notifications:send': ['SUPER_ADMIN', 'ACCOUNTANT'],
   'audit:read': ALL,
 
-  'users:read': ['SUPER_ADMIN'],
+  // The Accountant may look up who works in the system and add new accounts,
+  // but only the Super Admin can edit, disable or delete them.
+  'users:read': ['SUPER_ADMIN', 'ACCOUNTANT'],
+  'users:create': ['SUPER_ADMIN', 'ACCOUNTANT'],
   'users:manage': ['SUPER_ADMIN'],
-  // User accounts are never deleted (they are disabled instead so the audit
-  // trail stays intact). No role is granted this permission on purpose.
-  'users:delete': [],
+  // Removing an account is reserved for the Super Admin (the accountant can
+  // never remove anyone). The API still blocks deleting your own account or
+  // the last active Super Admin.
+  'users:delete': ['SUPER_ADMIN'],
   'settings:read': ALL,
   'settings:manage': ['SUPER_ADMIN'],
 };

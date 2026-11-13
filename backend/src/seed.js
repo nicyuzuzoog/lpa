@@ -8,6 +8,8 @@ import FeeItem from './models/FeeItem.js';
 import Setting from './models/Setting.js';
 import UniformItem from './models/UniformItem.js';
 import UniformStockTransaction from './models/UniformStockTransaction.js';
+import UniformIssuance from './models/UniformIssuance.js';
+import UniformEntitlement from './models/UniformEntitlement.js';
 import InventoryItem from './models/InventoryItem.js';
 import Student from './models/Student.js';
 import Payment from './models/Payment.js';
@@ -69,71 +71,67 @@ const MATERIALS_P45 = [
   { name: 'Pens & Stationery', price: 5000 },
 ];
 
-const UNIFORM_FEE_ITEMS = [
-  { name: 'Uniform Ikabutura', price: 8000 },
-  { name: 'Uniform Ijipo', price: 8000 },
-  { name: 'Uniform Ishati', price: 7000 },
-  { name: 'Sport Ikabutura', price: 5000 },
-  { name: 'Sport Umupira', price: 3000 },
-  { name: 'Socks Uniform', price: 1000 },
-  { name: 'Socks Sport', price: 500 },
-  { name: 'Umupira', price: 10000 },
-];
-
 // ============================================================================
-// UNIFORM STOCK LEDGER (L.P.A Rulindo report, 2026-2027, dated 08/10/2026)
+// RAPORO Y'IMYENDA YAKIRIWE, IYATANZWE N'IYASIGAYE I BWERAMVURA
 // ============================================================================
-// Item order used by every row of STOCK_DELIVERIES below.
+// The uniform dataset: unit price plus the pieces received (yakiriwe), issued
+// (yatanzwe) and remaining (yasigaye). These 8 articles are the ONLY uniform
+// items in the system. Any uniform data found in the database that is not
+// exactly this report is removed and replaced by it (STEP 5).
+//   value(FRW) = unit price x pieces, in every column of the report.
 const UNIFORM_STOCK = [
-  { name: 'Uniform Ikabutura', received: 48, sold: 16, returned: 23, inStock: 9, price: 8000 },
-  { name: 'Uniform Ijipo', received: 47, sold: 44, returned: 2, inStock: 1, price: 8000 },
-  { name: 'Uniform Ishati', received: 61, sold: 46, returned: 7, inStock: 8, price: 7000 },
-  { name: 'Sport Ikabutura', received: 61, sold: 38, returned: 14, inStock: 9, price: 5000 },
-  { name: 'Sport Umupira', received: 41, sold: 23, returned: 8, inStock: 10, price: 3000 },
-  { name: 'Socks Uniform', received: 55, sold: 46, returned: 0, inStock: 9, price: 1000 },
-  { name: 'Socks Sport', received: 66, sold: 48, returned: 0, inStock: 18, price: 500 },
-  { name: 'Umupira', received: 56, sold: 51, returned: 0, inStock: 5, price: 10000 },
+  { name: 'Amajipo (Uniforme)', price: 5000, received: 30, issued: 20, remaining: 10 }, // 150,000 / 100,000 / 50,000
+  { name: 'Amashati (Uniforme)', price: 5000, received: 70, issued: 46, remaining: 24 }, // 350,000 / 230,000 / 120,000
+  { name: 'Amasogisi (Uniform & Sport)', price: 3000, received: 119, issued: 75, remaining: 44 }, // 357,000 / 225,000 / 132,000
+  { name: 'Udupira (Sport / Uniform)', price: 5000, received: 56, issued: 38, remaining: 18 }, // 280,000 / 190,000 / 90,000
+  { name: 'Ikabutura Sport', price: 5000, received: 71, issued: 43, remaining: 28 }, // 355,000 / 215,000 / 140,000
+  { name: 'Ikabutura Uniform', price: 5000, received: 28, issued: 15, remaining: 13 }, // 140,000 / 75,000 / 65,000
+  { name: "Umupira w'imbeho Uminini (Upper)", price: 7000, received: 22, issued: 14, remaining: 8 }, // 154,000 / 98,000 / 56,000
+  { name: "Umupira w'imbeho Umuto (Lower & Mat.)", price: 6000, received: 30, issued: 18, remaining: 12 }, // 180,000 / 108,000 / 72,000
 ];
 
-// Date-by-date deliveries; columns follow UNIFORM_STOCK order.
-const STOCK_DELIVERIES = [
-  { date: '2026-08-31', label: 'Opening stock (Stok isanzwe)', qty: [6, 7, 0, 5, 3, 1, 0, 6] },
-  { date: '2026-09-01', qty: [6, 12, 3, 13, 1, 12, 12, 0] },
-  { date: '2026-09-03', qty: [0, 0, 8, 0, 0, 0, 0, 0] },
-  { date: '2026-09-06', qty: [2, 9, 16, 16, 0, 0, 0, 0] },
-  { date: '2026-09-08', qty: [10, 0, 0, 20, 20, 12, 24, 0] },
-  { date: '2026-09-14', qty: [10, 0, 0, 0, 0, 0, 0, 0] },
-  { date: '2026-09-15', qty: [0, 10, 10, 1, 0, 0, 0, 0] },
-  { date: '2026-09-16', qty: [0, 0, 0, 0, 0, 30, 30, 0] },
-  { date: '2026-09-21', qty: [0, 0, 0, 0, 0, 0, 0, 30] },
-  { date: '2026-09-22', qty: [0, 0, 5, 2, 4, 0, 0, 0] },
-  { date: '2026-09-28', qty: [0, 0, 0, 0, 10, 0, 0, 0] },
-  { date: '2026-10-01', qty: [14, 5, 16, 0, 0, 0, 0, 0] },
-  { date: '2026-10-02', qty: [0, 2, 3, 0, 0, 0, 0, 0] },
-  { date: '2026-10-06', qty: [0, 0, 0, 0, 0, 0, 0, 20] },
-  { date: '2026-10-07', qty: [0, 0, 0, 3, 3, 0, 0, 0] },
-];
+// Report TOTALS — checked while seeding (426 / 269 / 157 pieces).
+const UNIFORM_REPORT_TOTALS = { received: 426, issued: 269, remaining: 157 };
+
+// Classes that take the big ball (upper primary). Everybody else (lower
+// primary & maternelle) takes the small one.
+const UPPER_PRIMARY_CLASSES = new Set(['P4', 'P5']);
+const BALL_UPPER = "Umupira w'imbeho Uminini (Upper)";
+const BALL_LOWER = "Umupira w'imbeho Umuto (Lower & Mat.)";
+function ballItemName(className) {
+  return UPPER_PRIMARY_CLASSES.has(className) ? BALL_UPPER : BALL_LOWER;
+}
+
+// The uniform "menu" of the Fees page mirrors the very same articles and unit
+// prices, so the fee side and the stock side can never disagree.
+const UNIFORM_FEE_ITEMS = UNIFORM_STOCK.map((s, i) => ({ name: s.name, price: s.price, order: i + 1 }));
+
+// The day the report and the pick-up list below were handed in.
+const UNIFORM_REPORT_DATE = '2026-10-19';
 
 // ============================================================================
 // UNIFORMS TAKEN BY STUDENTS — "UKO ABANYESHURI BAFASHE IMYENDA"
 // ============================================================================
 // One row = one line of the Word table (a child can appear on two lines; each
 // line is a separate pick-up). `items` = the columns marked "1":
-//   J  = Uniform Ijipo        K  = Uniform Ikabutura   S  = Uniform Ishati
-//   SK = Sport Ikabutura      SU = Sport Umupira       U  = Umupira
-//   SO = Socks (amasogisi) Uniform                     SP = Socks (amasogisi) Sport
+//   J  = Amajipo (Uniforme)             K  = Ikabutura Uniform
+//   S  = Amashati (Uniforme)            SK = Ikabutura Sport
+//   SU = Udupira (Sport / Uniform)      U  = Umupira w'imbeho (the ball that
+//                                            matches the child's class level)
+//   SO = Amasogisi (uniform column)     SP = Amasogisi (sport column)
+// The Word table has two socks columns but the report has one article, so
+// SO and SP both point at "Amasogisi (Uniform & Sport)".
 const UNIFORM_CODES = {
-  J: 'Uniform Ijipo',
-  K: 'Uniform Ikabutura',
-  S: 'Uniform Ishati',
-  SK: 'Sport Ikabutura',
-  SU: 'Sport Umupira',
-  U: 'Umupira',
-  SO: 'Socks Uniform',
-  SP: 'Socks Sport',
+  J: 'Amajipo (Uniforme)',
+  K: 'Ikabutura Uniform',
+  S: 'Amashati (Uniforme)',
+  SK: 'Ikabutura Sport',
+  SU: 'Udupira (Sport / Uniform)',
+  SO: 'Amasogisi (Uniform & Sport)',
+  SP: 'Amasogisi (Uniform & Sport)',
 };
 // The Word list has no dates; this is the day it was handed in.
-const UNIFORM_TAKEN_DATE = '2026-10-19';
+const UNIFORM_TAKEN_DATE = UNIFORM_REPORT_DATE;
 const UNIFORM_TAKEN = [
   { no: 1, name: 'INEZA KUNDWA AVILLA', items: 'SK SU U SO SP' },
   { no: 2, name: 'IRANEZEZA MPANO BRAYAN', items: 'U SP' },
@@ -1048,89 +1046,120 @@ async function run() {
       order: 1,
     });
   }
-  for (const [i, u] of UNIFORM_FEE_ITEMS.entries()) {
-    await ensureFeeItem({ category: 'UNIFORM', name: u.name, price: u.price, order: i + 1 });
-  }
+  // The UNIFORM fee menu is not written here on purpose: it is rebuilt in
+  // STEP 5 from the uniform report so that the fee side always mirrors the
+  // stock side (same articles, same unit prices).
   console.log(`[seed] Fee items: ${itemsAdded} added, existing ones kept`);
 
-  // STEP 5: UNIFORM STOCK (dated deliveries per the 08/10/2026 report)
-  // Sales are written in STEP 9, split per student from the Word list.
+  // STEP 5: UNIFORM STOCK — RAPORO Y'IMYENDA (received / issued / remaining)
+  // The report is the one and only uniform dataset. When the database holds
+  // anything else (the previous articles, or no uniform at all) every uniform
+  // record is removed first and this report is loaded instead, because
+  // issuances and entitlements all point at the old items. When the report is
+  // already in place, the movements recorded through the app since then are
+  // kept untouched.
+  const targetNames = UNIFORM_STOCK.map((s) => s.name);
+  const currentNames = (await UniformItem.find({}, 'name')).map((i) => i.name);
+  const sameDataset =
+    currentNames.length === targetNames.length && targetNames.every((n) => currentNames.includes(n));
+
   const stockState = new Map();
-  let uniformItemsAdded = 0;
-  for (const [idx, s] of UNIFORM_STOCK.entries()) {
-    const quantityIssued = s.sold + s.returned;
-    if (s.received - quantityIssued !== s.inStock) {
-      console.warn(`[seed] WARNING stock mismatch for ${s.name}: ${s.received} - ${quantityIssued} != ${s.inStock}`);
-    }
-    const found = await UniformItem.findOne({ name: s.name, size: 'FREE', gender: 'UNISEX' });
-    if (found) {
-      console.log(`[seed] kept existing uniform item ${s.name}`);
-      continue;
-    }
-    const item = await UniformItem.create({
-      name: s.name,
-      gender: 'UNISEX',
-      size: 'FREE',
-      price: s.price,
-      quantityReceived: s.received,
-      quantityIssued,
-      minimumStockLevel: 5,
-      unitCost: Math.round(s.price * 0.6),
-      status: 'ACTIVE',
-    });
+  let uniformReset = false;
 
-    const deliveries = STOCK_DELIVERIES
-      .map((d) => ({ date: d.date, label: d.label || 'Delivery', qty: d.qty[idx] }))
-      .filter((d) => d.qty > 0);
-    const dated = deliveries.reduce((sum, d) => sum + d.qty, 0);
-    if (dated < s.received) {
-      deliveries.push({
-        date: '2026-10-08',
-        label: 'Reconciliation to report total',
-        qty: s.received - dated,
+  if (!sameDataset) {
+    const [oldItems, oldMovements, oldIssuances, oldEntitlements] = await Promise.all([
+      UniformItem.countDocuments({}),
+      UniformStockTransaction.countDocuments({}),
+      UniformIssuance.countDocuments({}),
+      UniformEntitlement.countDocuments({}),
+    ]);
+    await Promise.all([
+      UniformEntitlement.deleteMany({}),
+      UniformIssuance.deleteMany({}),
+      UniformStockTransaction.deleteMany({}),
+      UniformItem.deleteMany({}),
+    ]);
+    uniformReset = true;
+    console.log(
+      `[seed] Previous uniform data removed (${oldItems} items, ${oldMovements} stock movements, ${oldIssuances} issuances, ${oldEntitlements} entitlements)`
+    );
+
+    const value = (s) => s.received * s.price;
+    let receivedTotal = 0;
+    let issuedTotal = 0;
+    let remainingTotal = 0;
+    let valueTotal = 0;
+
+    for (const s of UNIFORM_STOCK) {
+      if (s.received - s.issued !== s.remaining) {
+        console.warn(`[seed] WARNING report mismatch for ${s.name}: ${s.received} - ${s.issued} != ${s.remaining}`);
+      }
+      const item = await UniformItem.create({
+        name: s.name,
+        gender: 'UNISEX',
+        size: 'FREE',
+        price: s.price,
+        quantityReceived: s.received,
+        quantityIssued: 0, // written by STEP 9, one line per child
+        minimumStockLevel: Math.min(5, s.remaining),
+        unitCost: Math.round(s.price * 0.6),
+        status: 'ACTIVE',
       });
-    }
 
-    // Movements in order: dated deliveries, then (dated at the report date)
-    // sales and the items sent back to the supplier. Running balance ends at
-    // the "in stock" figure of the report.
-    const REPORT_DATE = '2026-10-08';
-    const movements = deliveries.map((d) => ({
-      type: 'RECEIVED',
-      qty: d.qty,
-      sign: 1,
-      date: d.date,
-      reason: `${d.label} - L.P.A Rulindo stock report`,
-    }));
-    if (s.returned > 0) {
-      // "Imyenda yasubiyeyo": taken out of stock (stock goes DOWN), so it is
-      // stored as ADJUSTMENT rather than RETURNED to avoid being read as +stock.
-      movements.push({
-        type: 'ADJUSTMENT',
-        qty: s.returned,
-        sign: -1,
-        date: REPORT_DATE,
-        reason: 'Returned out of stock (IMYENDA YASUBIYEYO) - L.P.A Rulindo stock report',
-      });
-    }
-
-    let running = 0;
-    for (const m of movements) {
-      running += m.sign * m.qty;
+      // Opening line: everything the report says was received (yakiriwe).
       await UniformStockTransaction.create({
         uniformItem: item._id,
-        type: m.type,
-        quantity: m.qty,
-        balanceAfter: running,
-        date: new Date(m.date),
-        reason: `Seed: ${m.reason}`,
+        type: 'RECEIVED',
+        quantity: s.received,
+        balanceAfter: s.received,
+        date: new Date(UNIFORM_REPORT_DATE),
+        reason: `Seed: Stock received (YAKIRIWE) per RAPORO Y'IMYENDA - ${s.received} pcs x ${s.price} FRW`,
         performedBy: admin._id,
       });
+
+      stockState.set(s.name, { item, running: s.received, issued: s.issued, remaining: s.remaining });
+      receivedTotal += s.received;
+      issuedTotal += s.issued;
+      remainingTotal += s.remaining;
+      valueTotal += value(s);
     }
-    stockState.set(s.name, { item, running, sold: s.sold, inStock: s.inStock });
-    uniformItemsAdded++;
+
+    const t = UNIFORM_REPORT_TOTALS;
+    if (receivedTotal !== t.received || issuedTotal !== t.issued || remainingTotal !== t.remaining) {
+      console.warn(
+        `[seed] WARNING report totals are ${receivedTotal}/${issuedTotal}/${remainingTotal}, the document says ${t.received}/${t.issued}/${t.remaining}`
+      );
+    }
+    console.log(
+      `[seed] Uniform report loaded: ${UNIFORM_STOCK.length} items - received ${receivedTotal} (${valueTotal.toLocaleString('en-US')} FRW), issued ${issuedTotal}, remaining ${remainingTotal}`
+    );
+  } else {
+    console.log('[seed] Uniform report already in the database - live stock kept as is');
   }
-  console.log(`[seed] Uniform stock: ${uniformItemsAdded} item(s) added with their ledger, existing ones kept`);
+
+  // The UNIFORM fee menu mirrors the report: stale rows (the old articles) are
+  // dropped and missing ones are added, so Fees and Stock never disagree.
+  const feeTargetNames = UNIFORM_FEE_ITEMS.map((u) => u.name);
+  const feeCurrentNames = (await FeeItem.find({ category: 'UNIFORM' }, 'name')).map((f) => f.name);
+  const feeMenuSame =
+    feeCurrentNames.length === feeTargetNames.length && feeTargetNames.every((n) => feeCurrentNames.includes(n));
+  if (!feeMenuSame) {
+    await FeeItem.deleteMany({ category: 'UNIFORM' });
+    const upperClassIds = [classIds.P4, classIds.P5];
+    const lowerClassIds = Object.entries(classIds)
+      .filter(([name]) => !UPPER_PRIMARY_CLASSES.has(name))
+      .map(([, id]) => id);
+    for (const u of UNIFORM_FEE_ITEMS) {
+      await FeeItem.create({
+        category: 'UNIFORM',
+        name: u.name,
+        price: u.price,
+        order: u.order,
+        classes: u.name === BALL_UPPER ? upperClassIds : u.name === BALL_LOWER ? lowerClassIds : [],
+      });
+    }
+    console.log(`[seed] Uniform fee menu rebuilt: ${UNIFORM_FEE_ITEMS.length} articles at the report's unit prices`);
+  }
 
   // STEP 6: OTHER INVENTORY & SETTINGS
   const INVENTORY_ITEMS = [
@@ -1170,7 +1199,17 @@ async function run() {
 
   // The full student / payment / uniform-sales history is loaded only when the
   // database has no students yet, so re-running the seed never duplicates it.
+  // STEP 8 + STEP 9 (uniform entitlements and pick-ups) additionally run
+  // whenever the uniform report had to replace older uniform data.
   const hasStudents = (await Student.countDocuments()) > 0;
+  const rosterIndex = CLASS_ROSTERS.map((r) => ({
+    ...r,
+    _key: normalizeKey(r.name),
+    _tokens: nameTokens(r.name),
+  }));
+  const studentByRecord = new Map();
+  let entitlementCount = 0;
+
   if (hasStudents) {
     console.log('[seed] Students already present - skipping student, payment and uniform-sales history');
   } else {
@@ -1180,12 +1219,6 @@ async function run() {
       SCHOOL_FEES: new Date('2026-09-07'),
       UNIFORM: new Date('2026-09-30'),
     };
-
-    const rosterIndex = CLASS_ROSTERS.map((r) => ({
-      ...r,
-      _key: normalizeKey(r.name),
-      _tokens: nameTokens(r.name),
-    }));
 
     const txnsByRecord = new Map();
     const addTxn = (record, txn) => {
@@ -1253,12 +1286,12 @@ async function run() {
       mealByRecord.set(record, m);
     }
 
-    const studentByRecord = new Map();
     const receiptPrefix = await Setting.get('receipt_prefix', 'RCT');
-    const uniformPayments = [];
+    const mealFeePerTerm = Number(await Setting.get('meal_fee_per_term', 40000)) || 40000;
     let paymentCount = 0;
     let mealCount = 0;
     let mealTotal = 0;
+    let mealExcessTotal = 0;
 
     for (const record of rosterIndex) {
       const { firstName, lastName } = nameParts(record.name);
@@ -1298,38 +1331,53 @@ async function run() {
           feeType: item.feeType,
           amount: item.amount,
           paymentMethod: item.method,
+          // The depositor is saved in its own field so the receipt and the
+          // payments list can show "Paid by" (the note alone is not enough).
+          payerName: item.payer || '',
           paymentDate: item.date,
           recordedBy: admin._id,
           status: 'ACTIVE',
           note: item.payer ? `Payer: ${item.payer}` : '',
         });
-        if (item.feeType === 'UNIFORM') uniformPayments.push(payment);
         paymentCount++;
       }
 
       // School feeding payment (MEALS) — tracked separately from fees/materials/uniform.
+      // The meal charge is a fixed per-term fee (default 40,000 RWF). The
+      // feeding list contains amounts above that fee; they are capped at the
+      // fee so a MEALS payment can never exceed what the student owes. Any
+      // amount above the fee is not recorded (the excess is dropped).
       const meal = mealByRecord.get(record);
       if (meal && meal.amount > 0) {
         const mealDate = new Date(MEAL_LIST_DATE);
+        const mealPaid = Math.min(meal.amount, mealFeePerTerm);
+        const mealExcess = meal.amount - mealPaid;
         await Payment.create({
           receiptNumber: `${receiptPrefix}-${mealDate.getFullYear()}-${pad(await nextSequence('receipt'), 6)}`,
           student: student._id,
           academicYear: year._id,
           term: 'Term 1',
           feeType: 'MEALS',
-          amount: meal.amount,
+          amount: mealPaid,
           paymentMethod: meal.method,
+          payerName: meal.payer || '',
           paymentDate: mealDate,
           recordedBy: admin._id,
           status: 'ACTIVE',
           note: `School feeding (URUTONDE RW'ABANA BARIRA MU KIGO). ${meal.payer ? `Payer: ${meal.payer}` : ''}`.trim(),
         });
         mealCount++;
-        mealTotal += meal.amount;
+        mealTotal += mealPaid;
+        if (mealExcess > 0) {
+          mealExcessTotal += mealExcess;
+        }
       }
     }
     console.log(`[seed] Loaded ${rosterIndex.length} students and ${paymentCount} payments`);
     console.log(`[seed] School feeding: ${mealByRecord.size} students eat at school (${mealCount} MEALS payments, ${mealTotal} FRW recorded)`);
+    if (mealExcessTotal > 0) {
+      console.log(`[seed] School feeding capped at the ${mealFeePerTerm} FRW/term meal fee; ${mealExcessTotal} FRW above the fee was not recorded`);
+    }
     console.log(`[seed] Daily/weekly report payments added on top of class sheets: ${reportTotal} FRW`);
     if (overpaidList.length) {
       console.log('[seed] Paid more than materials + school fees (kept as advance on SCHOOL_FEES):');
@@ -1339,42 +1387,69 @@ async function run() {
       console.log(`[seed] ${unmatched.length} payment lines could not be tied to a student (kept out of the totals):`);
       unmatched.forEach((u) => console.log(`        - ${u}`));
     }
+  }
 
-    // STEP 8: UNIFORM ENTITLEMENTS
-    let entitlementCount = 0;
+  // STEP 8: UNIFORM ENTITLEMENTS — what each child is entitled to according to
+  // the uniform money they have paid. Runs whenever the students were loaded
+  // now, or whenever the report above replaced older uniform items (the old
+  // entitlements were deleted with them).
+  if (uniformReset || !hasStudents) {
+    entitlementCount = 0;
+    const uniformPayments = await Payment.find({ feeType: 'UNIFORM', status: 'ACTIVE' });
     for (const payment of uniformPayments) {
       const student = await Student.findById(payment.student);
+      if (!student) continue;
       const created = await refreshUniformEntitlements({
         student,
-        academicYear: year._id,
-        term: 'Term 1',
+        academicYear: payment.academicYear,
+        term: payment.term,
         payment,
       });
       entitlementCount += created.length;
     }
-    console.log(`[seed] Built ${entitlementCount} uniform entitlements`);
+    console.log(`[seed] Built ${entitlementCount} uniform entitlements from ${uniformPayments.length} uniform payments`);
+  } else {
+    console.log('[seed] Uniform items unchanged - existing entitlements kept as is');
+  }
 
-    // STEP 9: UNIFORMS TAKEN BY EACH STUDENT (UKO ABANYESHURI BAFASHE IMYENDA)
-    // Every item a child took is written as its own ISSUED movement naming the
-    // child. The stock sheet's "sold" figure stays the authority for the totals:
-    //  - sold > itemised  -> the difference is one "not itemised" ISSUED line
-    //  - itemised > sold  -> a RECEIVED correction (clearly labelled) is added
-    // so the final balance of every item equals the report's "in stock" figure.
+  // STEP 9: UNIFORMS TAKEN BY EACH STUDENT (UKO ABANYESHURI BAFASHE IMYENDA)
+  // Every item a child took is written as its own ISSUED movement naming the
+  // child. The stock sheet's "issued" figure stays the authority for the totals:
+  //  - issued > itemised  -> the difference is one "not itemised" ISSUED line
+  //  - itemised > issued  -> a RECEIVED correction (clearly labelled) is added
+  // so the final balance of every item equals the report's "remaining" figure.
+  if (!stockState.size) {
+    console.log('[seed] Uniform report already in the database - pick-up movements kept as is');
+  } else {
     const REPORT_DATE_SALES = '2026-10-08';
     const takenEvents = [];
     const takenUnmatched = [];
     const takenNoPayment = new Set();
+
+    // The pick-up list is written with plain names; when the roster was loaded
+    // in this very run the student object is already known, otherwise fall back
+    // to a database lookup so the seed also works on an existing database.
+    const studentForRecord = async (record) => {
+      if (!record) return null;
+      if (studentByRecord.has(record)) return studentByRecord.get(record);
+      const cls = classIds[record.className];
+      const { firstName, lastName } = nameParts(record.name);
+      if (!cls || !firstName) return null;
+      return Student.findOne({ class: cls, firstName, lastName });
+    };
+
     for (const row of UNIFORM_TAKEN) {
       const record = findRecord(row.name, '', rosterIndex);
-      const student = record ? studentByRecord.get(record) : null;
+      const student = await studentForRecord(record);
       if (!record) takenUnmatched.push(`#${row.no} ${row.name} (${row.items})`);
       if (record && !(record.uniformPaid > 0)) takenNoPayment.add(`${record.className} ${record.name}`);
       for (const code of row.items.split(/\s+/).filter(Boolean)) {
+        const itemName = code === 'U' ? ballItemName(record ? record.className : '') : UNIFORM_CODES[code];
         takenEvents.push({
           no: row.no,
-          itemName: UNIFORM_CODES[code],
+          itemName,
           who: record
-            ? `${record.name} (${student.studentId}, ${record.className})`
+            ? `${record.name} (${student ? `${student.studentId}, ` : ''}${record.className})`
             : `${row.name} (not found in any class sheet)`,
         });
       }
@@ -1399,19 +1474,19 @@ async function run() {
         });
         issuedLines++;
       };
-      if (st.sold > d) {
-        await write('ISSUED', st.sold - d, REPORT_DATE_SALES, 'Sold to students (IMYENDA YAGURISHIJWE), not itemised per student - L.P.A Rulindo stock report');
+      if (st.issued > d) {
+        await write('ISSUED', st.issued - d, REPORT_DATE_SALES, 'Issued to students (IMYENDA YATANZWE), not itemised per student - RAPORO Y\'IMYENDA I BWERAMVURA');
       }
-      if (d > st.sold) {
-        await write('RECEIVED', d - st.sold, UNIFORM_TAKEN_DATE, `Stock correction: Word list shows ${d} taken but the stock report says ${st.sold} sold`);
+      if (d > st.issued) {
+        await write('RECEIVED', d - st.issued, UNIFORM_TAKEN_DATE, `Stock correction: Word list shows ${d} taken but the stock report says ${st.issued} issued`);
       }
       for (const e of evs) {
         await write('ISSUED', 1, UNIFORM_TAKEN_DATE, `Taken by ${e.who} - UKO ABANYESHURI BAFASHE IMYENDA #${e.no}`);
       }
-      if (running !== st.inStock) {
-        console.warn(`[seed] WARNING ${name}: ledger ends at ${running}, stock report says ${st.inStock}`);
+      if (running !== st.remaining) {
+        console.warn(`[seed] WARNING ${name}: ledger ends at ${running}, stock report says ${st.remaining} remaining`);
       }
-      console.log(`        ${name.padEnd(18)} report sold ${String(st.sold).padStart(3)} | per student ${String(d).padStart(3)} | not itemised ${String(Math.max(0, st.sold - d)).padStart(3)}${d > st.sold ? ` | correction +${d - st.sold}` : ''}`);
+      console.log(`        ${name.padEnd(30)} report issued ${String(st.issued).padStart(3)} | per student ${String(d).padStart(3)} | not itemised ${String(Math.max(0, st.issued - d)).padStart(3)}${d > st.issued ? ` | correction +${d - st.issued}` : ''}`);
     }
     console.log(`[seed] ${takenEvents.length} uniform items recorded against ${UNIFORM_TAKEN.length} Word-list lines (${issuedLines} ledger lines)`);
     if (takenUnmatched.length) {
@@ -1422,7 +1497,6 @@ async function run() {
       console.log(`[seed] Took uniform items but have NO uniform payment in the class sheet (${takenNoPayment.size}):`);
       [...takenNoPayment].forEach((u) => console.log(`        - ${u}`));
     }
-
   }
 
   const classCounts = await Student.aggregate([

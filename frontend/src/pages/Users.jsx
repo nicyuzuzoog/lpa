@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { get, post, put } from '../services/api.js';
+import { get, post, put, apiDelete } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { formatDateTime, roleLabel, statusColor } from '../utils/format.js';
@@ -26,6 +26,8 @@ export default function Users() {
   const [form, setForm] = useState(EMPTY);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+  const [removeBusy, setRemoveBusy] = useState(false);
 
   useEffect(() => {
     get('/classes')
@@ -143,12 +145,47 @@ export default function Users() {
 
   const meId = String(me?._id);
 
+  const toggleStatus = async (r) => {
+    const next = r.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
+    try {
+      await put(`/users/${r.id}`, { status: next });
+      toast.success(next === 'DISABLED' ? `${r.fullName} was disabled` : `${r.fullName} was reactivated`);
+      load();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    setRemoveBusy(true);
+    try {
+      const d = await apiDelete(`/users/${deleting.id}`);
+      toast.success(d.message || `${deleting.fullName} was deleted`);
+      setDeleting(null);
+      load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setRemoveBusy(false);
+    }
+  };
+
+  // Only the Super Admin can grant administrator rights to a new account.
+  const roleOptions = ['SUPER_ADMIN', 'ACCOUNTANT', 'BIG_BOSS', 'TEACHER'].filter(
+    (r) => r !== 'SUPER_ADMIN' || can('users:manage')
+  );
+
   return (
     <div>
       <PageHeader
         title="Users & Roles"
-        subtitle="Only the Super Admin can create and manage users."
-        actions={can('users:manage') && <Button onClick={openCreate}>+ Create User</Button>}
+        subtitle={
+          can('users:manage')
+            ? 'Create, edit, disable or delete every account in the system.'
+            : 'View the staff accounts and add new users. Editing and removing accounts is up to the Super Admin.'
+        }
+        actions={can('users:create') && <Button onClick={openCreate}>+ Create User</Button>}
       />
 
       <Toolbar>
@@ -196,10 +233,41 @@ export default function Users() {
               key: 'actions',
               label: '',
               className: 'text-right',
-              render: (r) =>
-                can('users:manage') && (
-                  <button onClick={() => openEdit(r)} className="text-sm font-medium text-green-700 dark:text-green-400 hover:underline">Edit</button>
-                ),
+              render: (r) => {
+                const isMe = meId === String(r.id);
+                const links = [];
+                if (can('users:manage')) {
+                  links.push(
+                    <button key="edit" onClick={() => openEdit(r)} className="text-sm font-medium text-green-700 dark:text-green-400 hover:underline">Edit</button>
+                  );
+                  if (!isMe) {
+                    links.push(
+                      <button
+                        key="toggle"
+                        onClick={() => toggleStatus(r)}
+                        className="text-sm font-medium text-amber-600 dark:text-amber-400 hover:underline"
+                      >
+                        {r.status === 'ACTIVE' ? 'Disable' : 'Enable'}
+                      </button>
+                    );
+                  }
+                }
+                if (can('users:delete') && !isMe) {
+                  links.push(
+                    <button key="delete" onClick={() => setDeleting(r)} className="text-sm font-medium text-red-600 dark:text-red-400 hover:underline">Delete</button>
+                  );
+                }
+                return links.length ? (
+                  <span className="flex justify-end gap-3">
+                    {links.map((link, i) => (
+                      <span key={i} className="flex gap-3">
+                        {i > 0 ? <span className="text-gray-300 dark:text-gray-600">·</span> : null}
+                        {link}
+                      </span>
+                    ))}
+                  </span>
+                ) : null;
+              },
             },
           ]}
           rows={rows}
@@ -238,7 +306,7 @@ export default function Users() {
           </Field>
           <Field label="Role" required>
             <Select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} disabled={editing && editing.id !== undefined && String(editing.id) === meId}>
-              {['SUPER_ADMIN', 'ACCOUNTANT', 'BIG_BOSS', 'TEACHER'].map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
+              {roleOptions.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
             </Select>
           </Field>
           <Field label="Status" required>
@@ -301,6 +369,28 @@ export default function Users() {
             Teachers are added here by the administrator.
           </p>
         </form>
+      </Modal>
+
+      <Modal
+        open={!!deleting}
+        onClose={() => setDeleting(null)}
+        title={deleting ? `Delete ${deleting.fullName}?` : 'Delete user'}
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleting(null)}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDelete} disabled={removeBusy}>
+              {removeBusy ? 'Deleting…' : 'Delete User'}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          This permanently removes <span className="font-semibold">@{deleting?.username}</span>. Receipts,
+          payments and audit entries already recorded are kept, but they will no longer be linked to a user
+          account. To keep the history linked instead, close this and set the account status to{' '}
+          <span className="font-semibold">Disabled</span>.
+        </p>
       </Modal>
     </div>
   );

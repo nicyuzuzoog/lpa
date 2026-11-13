@@ -5,12 +5,28 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { money, formatDate, statusColor, feeTypeLabel, paymentMethodLabel } from '../utils/format.js';
 import { isPositive, isIntInRange, isFutureDate } from '../utils/validate.js';
+import { exportPdf, exportExcel, moneyFormat } from '../utils/export.js';
 import { PageHeader, Spinner, Badge, Toolbar } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal, ConfirmDialog } from '../components/Modal.jsx';
 import { Button, Field, Input, Select, Textarea } from '../components/Fields.jsx';
 
 const EMPTY_FORM = { student: '', feeType: 'SCHOOL_FEES', amount: '', paymentMethod: 'CASH', payerName: '', paymentDate: '', dueDate: '', note: '' };
+
+const EXPORT_COLUMNS = [
+  { key: 'receiptNumber', label: 'Receipt' },
+  { key: 'student', label: 'Student', format: (v, r) => (r.student ? `${r.student.firstName} ${r.student.lastName}` : '') },
+  { key: 'studentId', label: 'Student ID', format: (v, r) => r.student?.studentId || '' },
+  { key: 'class', label: 'Class', format: (v, r) => r.student?.class?.name || '' },
+  { key: 'feeType', label: 'Fee Type', format: (v) => feeTypeLabel(v) },
+  { key: 'amount', label: 'Amount (RWF)', format: moneyFormat },
+  { key: 'paymentMethod', label: 'Method', format: (v) => paymentMethodLabel(v) },
+  { key: 'payerName', label: 'Paid by', format: (v) => v || '' },
+  { key: 'paymentDate', label: 'Date', format: (v) => formatDate(v) },
+  { key: 'dueDate', label: 'Due Date', format: (v) => (v ? formatDate(v) : '') },
+  { key: 'status', label: 'Status' },
+  { key: 'recordedBy', label: 'Recorded By', format: (v, r) => r.recordedBy?.fullName || '' },
+];
 
 function StudentPicker({ value, onChange }) {
   const [query, setQuery] = useState('');
@@ -154,6 +170,51 @@ export default function Payments() {
 
   const activeYear = years.find((y) => y._id === filters.academicYear);
 
+  const exportSubtitle = [
+    filters.academicYear ? `Year: ${years.find((y) => y._id === filters.academicYear)?.name || ''}` : 'All years',
+    filters.term ? `Term: ${filters.term}` : 'All terms',
+    filters.class ? `Class: ${classes.find((c) => c._id === filters.class)?.name || ''}` : 'All classes',
+    filters.feeType ? `Fee: ${feeTypeLabel(filters.feeType)}` : null,
+    filters.paymentMethod ? `Method: ${paymentMethodLabel(filters.paymentMethod)}` : null,
+    filters.status ? `Status: ${filters.status}` : null,
+    filters.dateFrom || filters.dateTo ? `Date: ${filters.dateFrom || '…'} to ${filters.dateTo || '…'}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  // Downloads always cover every payment matching the current filters, not just the visible page.
+  const fetchForExport = async () => {
+    const limit = 200;
+    const first = await get('/payments', { ...filters, page: 1, limit });
+    let all = first.items || [];
+    const totalPages = first.pages || 1;
+    for (let p = 2; p <= totalPages; p += 1) {
+      const d = await get('/payments', { ...filters, page: p, limit });
+      all = all.concat(d.items || []);
+    }
+    return all;
+  };
+
+  const doPdf = async () => {
+    try {
+      const data = await fetchForExport();
+      if (!data.length) return toast.info('No payments to download');
+      await exportPdf({ title: 'Payments', subtitle: exportSubtitle, columns: EXPORT_COLUMNS, rows: data, fileName: 'payments' });
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
+  const doExcel = async () => {
+    try {
+      const data = await fetchForExport();
+      if (!data.length) return toast.info('No payments to download');
+      await exportExcel({ title: 'Payments', columns: EXPORT_COLUMNS, rows: data, fileName: 'payments', sheetName: 'Payments' });
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
   const openCreate = () => {
     setForm({ ...EMPTY_FORM, student: params.get('student') || '', paymentDate: new Date().toISOString().slice(0, 10) });
     setSummary(null);
@@ -200,8 +261,13 @@ export default function Payments() {
     if (!isPositive(form.amount)) return toast.error('Enter a valid payment amount greater than 0');
     if (!isIntInRange(form.amount, 1)) return toast.error('Payment amount must be a whole number');
     if (isFutureDate(form.paymentDate)) return toast.error('Payment date cannot be in the future');
-    if (['BANK', 'MOBILE_MONEY'].includes(form.paymentMethod) && !form.payerName.trim())
-      return toast.error('Enter the name of the person who paid (required for bank and mobile money)');
+    if (form.feeType === 'MEALS' && summaryRow && Number(form.amount) > summaryRow.balance)
+      return toast.error(
+        summaryRow.balance > 0
+          ? `Meal fee overpayment: the outstanding meal balance is ${money(summaryRow.balance)}. Record the remainder under another fee type.`
+          : 'This student has no outstanding meal balance to pay'
+      );
+    if (!form.payerName.trim()) return toast.error('Enter the name of the person who paid');
     if (remainingAfter > 0 && !form.dueDate)
       return toast.error('Enter the date the student will come back to pay the remaining balance');
     if (form.dueDate && form.paymentDate && form.dueDate < form.paymentDate)
@@ -225,8 +291,7 @@ export default function Payments() {
     if (!isPositive(form.amount)) return toast.error('Enter a valid payment amount greater than 0');
     if (!isIntInRange(form.amount, 1)) return toast.error('Payment amount must be a whole number');
     if (isFutureDate(form.paymentDate)) return toast.error('Payment date cannot be in the future');
-    if (['BANK', 'MOBILE_MONEY'].includes(form.paymentMethod) && !form.payerName.trim())
-      return toast.error('Enter the name of the person who paid (required for bank and mobile money)');
+    if (!form.payerName.trim()) return toast.error('Enter the name of the person who paid');
     if (form.dueDate && form.paymentDate && form.dueDate < form.paymentDate)
       return toast.error('The come-back-to-pay date cannot be before the payment date');
     setSaving(true);
@@ -324,6 +389,10 @@ export default function Payments() {
             </button>
           )}
         </div>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="secondary" onClick={doPdf}><i className="bi bi-file-earmark-pdf" /> PDF</Button>
+          <Button variant="secondary" onClick={doExcel}><i className="bi bi-file-earmark-excel" /> Excel</Button>
+        </div>
       </Toolbar>
 
       {loading ? (
@@ -356,15 +425,16 @@ export default function Payments() {
             { key: 'class', label: 'Class', render: (r) => r.student?.class?.name || '—' },
             { key: 'feeType', label: 'Fee Type', render: (r) => feeTypeLabel(r.feeType) },
             { key: 'amount', label: 'Amount', className: 'text-right font-semibold', render: (r) => money(r.amount) },
+            { key: 'paymentMethod', label: 'Method', render: (r) => paymentMethodLabel(r.paymentMethod) },
             {
-              key: 'paymentMethod',
-              label: 'Method',
-              render: (r) => (
-                <span>
-                  {paymentMethodLabel(r.paymentMethod)}
-                  {r.payerName ? <span className="block text-xs text-gray-400 dark:text-gray-500">by {r.payerName}</span> : null}
-                </span>
-              ),
+              key: 'payerName',
+              label: 'Paid by',
+              render: (r) =>
+                r.payerName ? (
+                  <span className="font-medium text-gray-700 dark:text-gray-200">{r.payerName}</span>
+                ) : (
+                  <span className="text-gray-300 dark:text-gray-600">—</span>
+                ),
             },
             {
               key: 'paymentDate',
@@ -446,11 +516,9 @@ export default function Payments() {
             <Field label="Payment Date">
               <Input type="date" value={form.paymentDate} onChange={(e) => setForm({ ...form, paymentDate: e.target.value })} />
             </Field>
-            {['BANK', 'MOBILE_MONEY'].includes(form.paymentMethod) && (
-              <Field label="Paid by (depositor name)" required hint="The name of the person who paid at the bank or via mobile money.">
-                <Input value={form.payerName} onChange={(e) => setForm({ ...form, payerName: e.target.value })} placeholder="e.g. Jean Bosco" />
-              </Field>
-            )}
+            <Field label="Paid by (depositor name)" required hint="The name of the person who actually paid (parent, guardian or student).">
+              <Input value={form.payerName} onChange={(e) => setForm({ ...form, payerName: e.target.value })} placeholder="e.g. Jean Bosco" />
+            </Field>
             {remainingAfter > 0 && (
               <Field label="Come back to pay by" required hint={`Remaining balance: ${money(remainingAfter)}`}>
                 <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
@@ -574,11 +642,9 @@ export default function Payments() {
                 {['CASH', 'BANK', 'MOBILE_MONEY', 'OTHER'].map((m) => <option key={m} value={m}>{paymentMethodLabel(m)}</option>)}
               </Select>
             </Field>
-            {['BANK', 'MOBILE_MONEY'].includes(form.paymentMethod) && (
-              <Field label="Paid by (depositor name)" required>
-                <Input value={form.payerName} onChange={(e) => setForm({ ...form, payerName: e.target.value })} placeholder="e.g. Jean Bosco" />
-              </Field>
-            )}
+            <Field label="Paid by (depositor name)" required hint="The name of the person who actually paid (parent, guardian or student).">
+              <Input value={form.payerName} onChange={(e) => setForm({ ...form, payerName: e.target.value })} placeholder="e.g. Jean Bosco" />
+            </Field>
           </div>
           <Field label="Payment Date">
             <Input type="date" value={form.paymentDate} onChange={(e) => setForm({ ...form, paymentDate: e.target.value })} />
