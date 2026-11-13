@@ -15,6 +15,11 @@ const studentName = (r) => r.name || `${r.student?.firstName || ''} ${r.student?
 const studentIdOf = (r) => r.studentId || r.student?.studentId || '';
 const classNameOf = (r) => r.class || r.student?.class?.name || '';
 
+// Significant Debt looks at SCHOOL FEES (tuition) only: meals, materials and
+// uniform are ignored, so a family that has cleared tuition is never flagged
+// because of an unpaid feeding or supplies balance.
+const schoolFeesOf = (r) => (r.breakdown || []).find((b) => b.feeType === 'SCHOOL_FEES') || null;
+
 export default function HighDebt() {
   const toast = useToast();
   const [rows, setRows] = useState([]);
@@ -67,11 +72,18 @@ export default function HighDebt() {
   }, [ready, load]);
 
   const flagged = rows
-    .filter((r) => r.required > 0 && r.balance / r.required > THRESHOLD)
-    .map((r) => ({ ...r, pctUnpaid: Math.round((r.balance / r.required) * 100) }))
-    .sort((a, b) => b.pctUnpaid - a.pctUnpaid || b.balance - a.balance);
+    .map((r) => {
+      const sf = schoolFeesOf(r);
+      const required = sf?.required || 0;
+      const paid = sf?.paid || 0;
+      const balance = sf ? sf.balance : 0;
+      return { ...r, sfRequired: required, sfPaid: paid, sfBalance: balance, sfStatus: sf?.status || 'UNPAID' };
+    })
+    .filter((r) => r.sfRequired > 0 && r.sfBalance / r.sfRequired > THRESHOLD)
+    .map((r) => ({ ...r, pctUnpaid: Math.round((r.sfBalance / r.sfRequired) * 100) }))
+    .sort((a, b) => b.pctUnpaid - a.pctUnpaid || b.sfBalance - a.sfBalance);
 
-  const totalOwed = flagged.reduce((a, r) => a + r.balance, 0);
+  const totalOwed = flagged.reduce((a, r) => a + r.sfBalance, 0);
   const avgPct = flagged.length ? Math.round(flagged.reduce((a, r) => a + r.pctUnpaid, 0) / flagged.length) : 0;
   const activeYear = years.find((y) => y._id === filters.academicYear);
   const hasFilters = Object.values(filters).some((v) => v !== '');
@@ -80,18 +92,18 @@ export default function HighDebt() {
     { key: 'studentId', label: 'Student ID', format: (v, r) => studentIdOf(r) },
     { key: 'name', label: 'Student Name', format: (v, r) => studentName(r) },
     { key: 'class', label: 'Class', format: (v, r) => classNameOf(r) },
-    { key: 'required', label: 'Required (RWF)', format: moneyFormat },
-    { key: 'paid', label: 'Paid (RWF)', format: moneyFormat },
-    { key: 'balance', label: 'Balance (RWF)', format: moneyFormat },
+    { key: 'sfRequired', label: 'School Fees Required (RWF)', format: moneyFormat },
+    { key: 'sfPaid', label: 'School Fees Paid (RWF)', format: moneyFormat },
+    { key: 'sfBalance', label: 'Balance (RWF)', format: moneyFormat },
     { key: 'pctUnpaid', label: '% Unpaid' },
-    { key: 'status', label: 'Status' },
+    { key: 'sfStatus', label: 'Status' },
   ];
 
   return (
     <div>
       <PageHeader
         title="Significant Debt"
-        subtitle="Students with more than 60% of their required fees still unpaid. Uniform is optional and excluded from these totals."
+        subtitle="Students with more than 60% of their school fees (tuition) still unpaid. Meals, materials and uniform are excluded from these totals."
         actions={
           <div className="flex gap-2">
             <Button
@@ -135,7 +147,7 @@ export default function HighDebt() {
 
       <div className="mb-3 flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-2.5 text-sm text-red-700 dark:text-red-400">
         <i className="bi bi-flag-fill" />
-        <span>Every student below has <strong>more than 60% unpaid</strong> — they are highlighted in red for follow-up with guardians.</span>
+        <span>Every student below has <strong>more than 60% of their school fees unpaid</strong> — they are highlighted in red for follow-up with guardians.</span>
       </div>
 
       <Toolbar>
@@ -188,13 +200,13 @@ export default function HighDebt() {
               ),
             },
             { key: 'class', label: 'Class', render: (r) => classNameOf(r) || '—' },
-            { key: 'required', label: 'Required', className: 'text-right', render: (r) => money(r.required) },
-            { key: 'paid', label: 'Paid', className: 'text-right', render: (r) => money(r.paid) },
+            { key: 'sfRequired', label: 'School Fees', className: 'text-right', render: (r) => money(r.sfRequired) },
+            { key: 'sfPaid', label: 'Paid', className: 'text-right', render: (r) => money(r.sfPaid) },
             {
-              key: 'balance',
+              key: 'sfBalance',
               label: 'Balance Owed',
               className: 'text-right font-semibold',
-              render: (r) => <span className="text-red-700 dark:text-red-400">{money(r.balance)}</span>,
+              render: (r) => <span className="text-red-700 dark:text-red-400">{money(r.sfBalance)}</span>,
             },
             {
               key: 'pctUnpaid',
@@ -215,7 +227,7 @@ export default function HighDebt() {
               render: (r) => (
                 <span className="inline-flex items-center gap-1.5">
                   <i className="bi bi-flag-fill text-red-500" />
-                  <Badge className={statusColor(r.status)}>{r.status.replace('_', ' ')}</Badge>
+                  <Badge className={statusColor(r.sfStatus)}>{r.sfStatus.replace('_', ' ')}</Badge>
                 </span>
               ),
             },
@@ -233,7 +245,7 @@ export default function HighDebt() {
           rows={flagged}
           rowClassName={() => 'bg-red-50/80 ring-1 ring-inset ring-red-100 dark:bg-red-950/30 dark:ring-red-900'}
           emptyTitle="No students above the 60% threshold"
-          emptyMessage="Nobody currently owes more than 60% of their required fees."
+          emptyMessage="Nobody currently owes more than 60% of their school fees."
           keyFn={(r) => r.student?._id || r.studentId}
         />
       )}
