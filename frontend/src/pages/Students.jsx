@@ -313,7 +313,7 @@ export default function Students() {
           <Field label="Father Phone" hint="Optional">
             <Input value={form.fatherPhone} onChange={(e) => setForm({ ...form, fatherPhone: e.target.value })} placeholder="e.g. 0787654321" />
           </Field>
-          <Field label="School Feeding" hint="Tick if the student eats at the school — meal payments are tracked on the Meals page.">
+          <Field label="School Feeding" hint="Tick if the student eats at the school — the meal charge is added to their fees.">
             <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800">
               <input
                 type="checkbox"

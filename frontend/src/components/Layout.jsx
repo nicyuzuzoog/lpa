@@ -38,10 +38,6 @@ const NAV = [
     ],
   },
   {
-    section: 'School Feeding',
-    items: [{ to: '/app/meals', label: 'Meal Payments', icon: 'bi-cup-hot', perm: 'students:read' }],
-  },
-  {
     section: 'Stock',
     items: [
       { to: '/app/uniforms', label: 'Uniforms', icon: 'bi-tag', perm: 'uniforms:read' },

@@ -15,7 +15,6 @@ import Payments from './pages/Payments.jsx';
 import Balances from './pages/Balances.jsx';
 import LowPayers from './pages/LowPayers.jsx';
 import HighDebt from './pages/HighDebt.jsx';
-import Meals from './pages/Meals.jsx';
 import Receipt from './pages/Receipt.jsx';
 import Uniforms from './pages/Uniforms.jsx';
 import UniformVerify from './pages/UniformVerify.jsx';
@@ -87,7 +86,6 @@ export default function App() {
         <Route path="payments/balances" element={<Protected perm="payments:read"><Balances /></Protected>} />
         <Route path="payments/ranking" element={<Protected perm="payments:read"><LowPayers /></Protected>} />
         <Route path="payments/high-debt" element={<Protected perm="payments:read"><HighDebt /></Protected>} />
-        <Route path="meals" element={<Protected perm="students:read"><Meals /></Protected>} />
         <Route path="payments/:id/receipt" element={<Protected perm="payments:read"><Receipt /></Protected>} />
         <Route path="uniforms" element={<Protected perm="uniforms:read"><Uniforms /></Protected>} />
         <Route path="uniforms/verify/:id" element={<Protected perm="uniforms:read"><UniformVerify /></Protected>} />
