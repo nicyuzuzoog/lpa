@@ -124,16 +124,28 @@ export const listPayments = asyncHandler(async (req, res) => {
 });
 
 export const createPayment = asyncHandler(async (req, res) => {
-  const { student: studentRef, feeType, amount, paymentMethod, paymentDate, note, receiptNumber, payerName, dueDate } = req.body;
-  if (!studentRef || !feeType || !paymentMethod) throw new ApiError(400, 'Student, fee type and payment method are required');
-  if (amount === undefined || amount === null || Number.isNaN(Number(amount))) throw new ApiError(400, 'Payment amount is required');
-  if (Number(amount) <= 0) throw new ApiError(400, 'Payment amount cannot be zero or negative');
-  if (!Number.isInteger(Number(amount))) throw new ApiError(400, 'Payment amount must be a whole number');
+  const { student: studentRef, paymentMethod, paymentDate, note, payerName, dueDate } = req.body;
 
+  // A single submission may cover several fee types at once (e.g. materials and
+  // school fees together). Callers send `items: [{ feeType, amount }]`; the old
+  // single `feeType`/`amount` pair is still accepted for backward compatibility.
+  const rawItems = Array.isArray(req.body.items) && req.body.items.length
+    ? req.body.items
+    : [{ feeType: req.body.feeType, amount: req.body.amount }];
+  const items = rawItems.map((it) => ({ feeType: it?.feeType, amount: Number(it?.amount) }));
+
+  if (!studentRef) throw new ApiError(400, 'Student is required');
+  if (!paymentMethod) throw new ApiError(400, 'Payment method is required');
   // The depositor ("Paid by") is captured on every payment so the receipt and
   // the payments list always show who actually paid.
   if (!String(payerName || '').trim()) {
     throw new ApiError(400, 'Enter the name of the person who paid');
+  }
+  for (const it of items) {
+    if (!it.feeType) throw new ApiError(400, 'Select a fee type for every payment line');
+    if (!Number.isFinite(it.amount)) throw new ApiError(400, 'Payment amount is required');
+    if (it.amount <= 0) throw new ApiError(400, 'Payment amount cannot be zero or negative');
+    if (!Number.isInteger(it.amount)) throw new ApiError(400, 'Payment amount must be a whole number');
   }
 
   const student = await Student.findById(studentRef).populate('class', 'name').populate('academicYear', 'name');
@@ -146,91 +158,153 @@ export const createPayment = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Payment term must match the student term');
   }
 
-  if (receiptNumber) {
-    const dup = await Payment.findOne({ receiptNumber: receiptNumber.toUpperCase().trim() });
+  if (req.body.receiptNumber) {
+    const dup = await Payment.findOne({ receiptNumber: String(req.body.receiptNumber).toUpperCase().trim() });
     if (dup) throw new ApiError(409, 'This receipt number already exists');
   }
 
-  const required = await requiredFor(student, feeType);
-  const settledBefore = await settledPaidFor(student, feeType);
-  const balanceBefore = required - settledBefore;
+  // Current outstanding per fee type, from the same meals-first waterfall used
+  // everywhere else in the app.
+  const before = await getStudentFeeSummary(student);
+  const balanceByType = {};
+  for (const row of before.rows) balanceByType[row.feeType] = row.balance;
 
-  // School feeding is a fixed charge (default 40,000 RWF/term): a meal payment
-  // may never exceed what the student still owes for meals. The remainder of a
-  // family's money must be recorded against another fee type.
-  if (feeType === 'MEALS' && Number(amount) > balanceBefore) {
-    throw new ApiError(
-      400,
-      balanceBefore > 0
-        ? `A meal payment cannot exceed the outstanding meal balance of ${balanceBefore.toLocaleString('en-US')} RWF`
-        : 'This student has no outstanding meal balance to pay'
-    );
+  // Collapse repeated fee types (e.g. two materials lines) into one amount.
+  const requested = new Map();
+  const order = [];
+  for (const it of items) {
+    if (!requested.has(it.feeType)) {
+      requested.set(it.feeType, 0);
+      order.push(it.feeType);
+    }
+    requested.set(it.feeType, requested.get(it.feeType) + it.amount);
   }
 
-  const settledAfter = await settledPaidFor(student, feeType, { extraAmount: Number(amount) });
-  const balanceAfter = required - settledAfter;
+  // Split the money into the fee it is meant for and any overflow. Overflow
+  // from a core fee (materials/other) falls through to school fees, mirroring
+  // the balance waterfall, so extra money is never lost. Meals is a fixed
+  // charge and may never be overpaid; uniform keeps its own overpayment.
+  const allocations = new Map();
+  let schoolFeesExtra = 0;
+  for (const feeType of order) {
+    const amount = requested.get(feeType);
+    if (feeType === 'UNIFORM') {
+      allocations.set(feeType, amount);
+      continue;
+    }
+    const balance = balanceByType[feeType] ?? 0;
+    if (feeType === 'MEALS') {
+      if (amount > balance) {
+        throw new ApiError(
+          400,
+          balance > 0
+            ? `A meal payment cannot exceed the outstanding meal balance of ${balance.toLocaleString('en-US')} RWF`
+            : 'This student has no outstanding meal balance to pay'
+        );
+      }
+      allocations.set(feeType, amount);
+      continue;
+    }
+    const applied = Math.max(0, Math.min(amount, balance));
+    if (applied > 0) allocations.set(feeType, (allocations.get(feeType) || 0) + applied);
+    if (amount - applied > 0) schoolFeesExtra += amount - applied;
+  }
+  if (schoolFeesExtra > 0) {
+    allocations.set('SCHOOL_FEES', (allocations.get('SCHOOL_FEES') || 0) + schoolFeesExtra);
+  }
+
+  if (!allocations.size) throw new ApiError(400, 'Nothing to record: the selected fees are already fully paid');
 
   const payDate = paymentDate ? new Date(paymentDate) : new Date();
   let due = null;
   if (dueDate) due = normalizeDay(dueDate);
-  if (balanceAfter > 0 && !due) {
+
+  const nonUniformRecorded = [...allocations.entries()]
+    .filter(([t]) => t !== 'UNIFORM')
+    .reduce((a, [, v]) => a + v, 0);
+  const projectedBalance = before.totalBalance - nonUniformRecorded;
+  const uniformRow = before.rows.find((r) => r.feeType === 'UNIFORM');
+  const uniformRemaining = uniformRow ? uniformRow.balance - (allocations.get('UNIFORM') || 0) : 0;
+  if ((projectedBalance > 0 || uniformRemaining > 0) && !due) {
     throw new ApiError(400, 'Enter the date the student will come back to pay the remaining balance');
   }
   if (due && normalizeDay(payDate).getTime() > due.getTime()) {
     throw new ApiError(400, 'The come-back-to-pay date cannot be before the payment date');
   }
 
-  const doc = await Payment.create({
-    receiptNumber: receiptNumber ? receiptNumber.toUpperCase().trim() : await nextReceiptNumber(payDate),
-    student: student._id,
-    academicYear: student.academicYear._id,
-    term: student.term,
-    feeType,
-    amount: Number(amount),
-    paymentMethod,
-    payerName: String(payerName || '').trim(),
-    paymentDate: payDate,
-    dueDate: due,
-    recordedBy: req.user._id,
-    balanceBefore,
-    balanceAfter,
-    note: note || '',
-  });
-
-  if (feeType === 'UNIFORM') {
-    await refreshUniformEntitlements({ student, academicYear: student.academicYear._id, term: student.term, payment: doc });
+  const entries = [...allocations.entries()];
+  const created = [];
+  for (let i = 0; i < entries.length; i += 1) {
+    const [feeType, amount] = entries[i];
+    const receipt = i === 0 && req.body.receiptNumber
+      ? String(req.body.receiptNumber).toUpperCase().trim()
+      : await nextReceiptNumber(payDate);
+    const doc = await Payment.create({
+      receiptNumber: receipt,
+      student: student._id,
+      academicYear: student.academicYear._id,
+      term: student.term,
+      feeType,
+      amount,
+      paymentMethod,
+      payerName: String(payerName || '').trim(),
+      paymentDate: payDate,
+      dueDate: due,
+      recordedBy: req.user._id,
+      balanceBefore: balanceByType[feeType] ?? 0,
+      balanceAfter: (balanceByType[feeType] ?? 0) - amount,
+      note: note || '',
+    });
+    created.push(doc);
   }
 
-  await recordAudit({
-    user: req.user,
-    action: 'CREATE_PAYMENT',
-    module: 'PAYMENTS',
-    recordId: doc._id,
-    recordLabel: doc.receiptNumber,
-    newValue: {
-      student: `${student.studentId} - ${student.firstName} ${student.lastName}`,
-      feeType,
-      amount: doc.amount,
-      paymentMethod,
-      balanceAfter,
-    },
-  });
+  // Refresh the stored "balance after" now that every line is in the books.
+  const after = await getStudentFeeSummary(student);
+  const afterByType = {};
+  for (const row of after.rows) afterByType[row.feeType] = row.balance;
+  for (const doc of created) {
+    doc.balanceAfter = afterByType[doc.feeType] ?? doc.balanceAfter;
+    await doc.save();
+  }
 
+  const uniformDoc = created.find((d) => d.feeType === 'UNIFORM');
+  if (uniformDoc) {
+    await refreshUniformEntitlements({ student, academicYear: student.academicYear._id, term: student.term, payment: uniformDoc });
+  }
+
+  for (const doc of created) {
+    await recordAudit({
+      user: req.user,
+      action: 'CREATE_PAYMENT',
+      module: 'PAYMENTS',
+      recordId: doc._id,
+      recordLabel: doc.receiptNumber,
+      newValue: {
+        student: `${student.studentId} - ${student.firstName} ${student.lastName}`,
+        feeType: doc.feeType,
+        amount: doc.amount,
+        paymentMethod,
+        balanceAfter: doc.balanceAfter,
+      },
+    });
+  }
+
+  const total = created.reduce((a, d) => a + d.amount, 0);
+  const lineSummary = created.map((d) => `${d.feeType}: ${d.amount.toLocaleString()}`).join(', ');
   await notify({
-    title: 'Payment recorded',
-    message: `${doc.receiptNumber}: ${doc.amount.toLocaleString()} RWF received from ${student.firstName} ${student.lastName} (${feeType})`,
+    title: created.length > 1 ? 'Payments recorded' : 'Payment recorded',
+    message: `${created[0].receiptNumber}: ${total.toLocaleString()} RWF received from ${student.firstName} ${student.lastName} (${lineSummary})`,
     type: 'PAYMENT',
-    relatedRecord: { module: 'payments', id: String(doc._id) },
+    relatedRecord: { module: 'payments', id: String(created[0]._id) },
     createdBy: req.user._id,
   });
 
-  const populated = await doc.populate([
-    { path: 'student', select: 'studentId firstName lastName class' },
-    { path: 'academicYear', select: 'name' },
-    { path: 'recordedBy', select: 'fullName username role' },
-  ]);
+  const populated = await Payment.find({ _id: { $in: created.map((d) => d._id) } })
+    .populate({ path: 'student', select: 'studentId firstName lastName class' })
+    .populate('academicYear', 'name')
+    .populate('recordedBy', 'fullName username role');
 
-  res.status(201).json({ success: true, item: populated });
+  res.status(201).json({ success: true, items: populated, item: populated[0] });
 });
 
 export const getPayment = asyncHandler(async (req, res) => {

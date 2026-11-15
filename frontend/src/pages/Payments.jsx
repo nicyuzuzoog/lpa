@@ -13,6 +13,42 @@ import { Button, Field, Input, Select, Textarea } from '../components/Fields.jsx
 
 const EMPTY_FORM = { student: '', feeType: 'SCHOOL_FEES', amount: '', paymentMethod: 'CASH', payerName: '', paymentDate: '', dueDate: '', note: '' };
 
+const FEE_TYPES = ['SCHOOL_FEES', 'MATERIALS', 'UNIFORM', 'MEALS', 'OTHER'];
+
+// Mirrors the server-side split: money entered for a core fee only covers that
+// fee's outstanding balance; any overflow is recorded against school fees, the
+// same way the balance waterfall treats extra money.
+function allocatePreview(lines, summary) {
+  const balanceByType = {};
+  (summary?.rows || []).forEach((r) => { balanceByType[r.feeType] = r.balance; });
+
+  const requested = new Map();
+  const order = [];
+  for (const l of lines) {
+    const amt = Number(l.amount) || 0;
+    if (!l.feeType || amt <= 0) continue;
+    if (!requested.has(l.feeType)) { requested.set(l.feeType, 0); order.push(l.feeType); }
+    requested.set(l.feeType, requested.get(l.feeType) + amt);
+  }
+
+  const out = [];
+  let schoolFeesExtra = 0;
+  for (const feeType of order) {
+    const amount = requested.get(feeType);
+    if (feeType === 'UNIFORM' || feeType === 'MEALS') { out.push({ feeType, amount }); continue; }
+    const balance = balanceByType[feeType] ?? 0;
+    const applied = Math.max(0, Math.min(amount, balance));
+    if (applied > 0) out.push({ feeType, amount: applied });
+    if (amount - applied > 0) schoolFeesExtra += amount - applied;
+  }
+  if (schoolFeesExtra > 0) {
+    const existing = out.find((o) => o.feeType === 'SCHOOL_FEES');
+    if (existing) existing.amount += schoolFeesExtra;
+    else out.push({ feeType: 'SCHOOL_FEES', amount: schoolFeesExtra });
+  }
+  return out;
+}
+
 const EXPORT_COLUMNS = [
   { key: 'receiptNumber', label: 'Receipt' },
   { key: 'student', label: 'Student', format: (v, r) => (r.student ? `${r.student.firstName} ${r.student.lastName}` : '') },
@@ -126,6 +162,7 @@ export default function Payments() {
   });
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [lines, setLines] = useState([{ feeType: 'SCHOOL_FEES', amount: '' }]);
   const [summary, setSummary] = useState(null);
   const [uniformBal, setUniformBal] = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -217,6 +254,7 @@ export default function Payments() {
 
   const openCreate = () => {
     setForm({ ...EMPTY_FORM, student: params.get('student') || '', paymentDate: new Date().toISOString().slice(0, 10) });
+    setLines([{ feeType: 'SCHOOL_FEES', amount: '' }]);
     setSummary(null);
     setUniformBal(null);
     setModal('create');
@@ -241,41 +279,65 @@ export default function Payments() {
     }
   };
 
-  // Applies the entered amount to the student's largest outstanding core debt (school fees or materials).
-  const applyToOtherDebts = () => {
-    const debts = (summary?.rows || []).filter((r) => !r.optional && r.balance > 0);
-    if (!debts.length) {
-      toast.info('This student has no other outstanding debts');
-      return;
-    }
-    const target = debts.sort((a, b) => b.balance - a.balance)[0];
-    setForm((f) => ({ ...f, feeType: target.feeType }));
-    toast.info(`${money(form.amount)} will be applied to ${feeTypeLabel(target.feeType)} (outstanding ${money(target.balance)})`);
+  const addLine = () => setLines((ls) => [...ls, { feeType: 'SCHOOL_FEES', amount: '' }]);
+  const removeLine = (idx) => setLines((ls) => ls.filter((_, i) => i !== idx));
+  const setLine = (idx, patch) => setLines((ls) => ls.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+  const addUniformLine = () => {
+    const remaining = uniformBal?.remaining || 0;
+    setLines((ls) => (ls.some((l) => l.feeType === 'UNIFORM')
+      ? ls
+      : [...ls, { feeType: 'UNIFORM', amount: remaining > 0 ? String(remaining) : '' }]));
   };
+  const removeUniformLines = () => setLines((ls) => ls.filter((l) => l.feeType !== 'UNIFORM'));
 
   const save = async (e) => {
     e.preventDefault();
     if (!form.student) return toast.error('Select a student');
-    if (!form.feeType) return toast.error('Select a fee type');
     if (!form.paymentMethod) return toast.error('Select a payment method');
-    if (!isPositive(form.amount)) return toast.error('Enter a valid payment amount greater than 0');
-    if (!isIntInRange(form.amount, 1)) return toast.error('Payment amount must be a whole number');
-    if (isFutureDate(form.paymentDate)) return toast.error('Payment date cannot be in the future');
-    if (form.feeType === 'MEALS' && summaryRow && Number(form.amount) > summaryRow.balance)
-      return toast.error(
-        summaryRow.balance > 0
-          ? `Meal fee overpayment: the outstanding meal balance is ${money(summaryRow.balance)}. Record the remainder under another fee type.`
-          : 'This student has no outstanding meal balance to pay'
-      );
     if (!form.payerName.trim()) return toast.error('Enter the name of the person who paid');
-    if (remainingAfter > 0 && !form.dueDate)
+
+    const items = lines.map((l) => ({ feeType: l.feeType, amount: Number(l.amount) }));
+    if (!items.length) return toast.error('Add at least one fee to pay');
+    for (const it of items) {
+      if (!it.feeType) return toast.error('Select a fee type for every line');
+      if (!isPositive(it.amount)) return toast.error('Enter a valid payment amount greater than 0 on every line');
+      if (!isIntInRange(it.amount, 1)) return toast.error('Payment amounts must be whole numbers');
+    }
+    if (isFutureDate(form.paymentDate)) return toast.error('Payment date cannot be in the future');
+
+    const mealsLine = items.find((i) => i.feeType === 'MEALS');
+    if (mealsLine) {
+      const mealsBalance = summary?.rows?.find((r) => r.feeType === 'MEALS')?.balance || 0;
+      if (mealsLine.amount > mealsBalance)
+        return toast.error(
+          mealsBalance > 0
+            ? `Meal fee overpayment: the outstanding meal balance is ${money(mealsBalance)}. Put the remainder on another fee.`
+            : 'This student has no outstanding meal balance to pay'
+        );
+    }
+
+    if (needsDueDate && !form.dueDate)
       return toast.error('Enter the date the student will come back to pay the remaining balance');
     if (form.dueDate && form.paymentDate && form.dueDate < form.paymentDate)
       return toast.error('The come-back-to-pay date cannot be before the payment date');
+
     setSaving(true);
     try {
-      const d = await post('/payments', { ...form, amount: Number(form.amount) });
-      toast.success(`Payment recorded · ${d.item.receiptNumber}`);
+      const d = await post('/payments', {
+        student: form.student,
+        paymentMethod: form.paymentMethod,
+        payerName: form.payerName,
+        paymentDate: form.paymentDate,
+        dueDate: form.dueDate,
+        note: form.note,
+        items,
+      });
+      const recorded = d.items || [];
+      toast.success(
+        recorded.length > 1
+          ? `${recorded.length} payments recorded · ${recorded.map((r) => r.receiptNumber).join(', ')}`
+          : `Payment recorded · ${d.item?.receiptNumber || ''}`
+      );
       setModal(null);
       load();
     } catch (err) {
@@ -335,8 +397,18 @@ export default function Payments() {
     }
   };
 
-  const summaryRow = summary?.rows?.find((r) => r.feeType === form.feeType);
-  const remainingAfter = summaryRow ? summaryRow.balance - Number(form.amount || 0) : 0;
+  const preview = allocatePreview(lines, summary);
+  const totalEntered = lines.reduce((a, l) => a + (Number(l.amount) || 0), 0);
+  const nonUniformEntered = lines
+    .filter((l) => l.feeType !== 'UNIFORM')
+    .reduce((a, l) => a + (Number(l.amount) || 0), 0);
+  const uniformEntered = lines
+    .filter((l) => l.feeType === 'UNIFORM')
+    .reduce((a, l) => a + (Number(l.amount) || 0), 0);
+  const overallRemaining = summary ? Math.max(0, summary.totalBalance - nonUniformEntered) : 0;
+  const uniformRow = summary?.rows?.find((r) => r.feeType === 'UNIFORM');
+  const uniformRemaining = uniformRow ? Math.max(0, uniformRow.balance - uniformEntered) : 0;
+  const needsDueDate = overallRemaining > 0 || uniformRemaining > 0;
 
   return (
     <div>
@@ -499,15 +571,51 @@ export default function Payments() {
             <StudentPicker value={form.student} onChange={onStudentChange} />
           </Field>
 
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Fees being paid</p>
+              <button type="button" onClick={addLine} className="text-sm font-medium text-green-700 dark:text-green-400 hover:underline">
+                <i className="bi bi-plus-circle" /> Add another fee
+              </button>
+            </div>
+            {lines.map((line, idx) => {
+              const row = summary?.rows?.find((r) => r.feeType === line.feeType);
+              const amt = Number(line.amount) || 0;
+              const lineRemaining = row ? Math.max(0, row.balance - amt) : 0;
+              return (
+                <div key={idx} className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
+                  <div className="grid gap-2 sm:grid-cols-[1fr,1fr,auto] sm:items-end">
+                    <Field label="Fee Type" required>
+                      <Select value={line.feeType} onChange={(e) => setLine(idx, { feeType: e.target.value })}>
+                        {FEE_TYPES.map((t) => <option key={t} value={t}>{feeTypeLabel(t)}</option>)}
+                      </Select>
+                    </Field>
+                    <Field label="Amount (RWF)" required>
+                      <Input type="number" min="1" value={line.amount} onChange={(e) => setLine(idx, { amount: e.target.value })} placeholder="e.g. 40000" />
+                    </Field>
+                    {lines.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeLine(idx)}
+                        className="mb-1 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  {row && (
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      Outstanding: <span className="font-medium text-gray-700 dark:text-gray-200">{money(row.balance)}</span>
+                      {amt > 0 && <> · Remaining after: <span className="font-medium text-gray-700 dark:text-gray-200">{money(lineRemaining)}</span></>}
+                      {row.optional && <span className="ml-2 rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5">optional</span>}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Fee Type" required>
-              <Select value={form.feeType} onChange={(e) => setForm({ ...form, feeType: e.target.value })}>
-                {['SCHOOL_FEES', 'MATERIALS', 'UNIFORM', 'MEALS', 'OTHER'].map((t) => <option key={t} value={t}>{feeTypeLabel(t)}</option>)}
-              </Select>
-            </Field>
-            <Field label="Amount (RWF)" required>
-              <Input type="number" min="1" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="e.g. 40000" />
-            </Field>
             <Field label="Payment Method" required>
               <Select value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}>
                 {['CASH', 'BANK', 'MOBILE_MONEY', 'OTHER'].map((m) => <option key={m} value={m}>{paymentMethodLabel(m)}</option>)}
@@ -519,29 +627,30 @@ export default function Payments() {
             <Field label="Paid by (depositor name)" required hint="The name of the person who actually paid (parent, guardian or student).">
               <Input value={form.payerName} onChange={(e) => setForm({ ...form, payerName: e.target.value })} placeholder="e.g. Jean Bosco" />
             </Field>
-            {remainingAfter > 0 && (
-              <Field label="Come back to pay by" required hint={`Remaining balance: ${money(remainingAfter)}`}>
+            {needsDueDate && (
+              <Field label="Come back to pay by" required hint={`Remaining balance: ${money(overallRemaining + uniformRemaining)}`}>
                 <Input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
               </Field>
             )}
           </div>
 
-          {summary && summaryRow && (
+          {summary && preview.length > 0 && (
             <div className="rounded-lg bg-green-50 dark:bg-green-950/40 p-3 text-sm">
-              <p className="mb-1 font-medium text-green-800">
-                {feeTypeLabel(form.feeType)} balance for this student:
-                {summaryRow.optional && <span className="ml-2 rounded bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-300">optional</span>}
+              <p className="mb-1 font-medium text-green-800">This payment will be recorded as:</p>
+              <ul className="space-y-0.5">
+                {preview.map((p) => (
+                  <li key={p.feeType} className="flex justify-between text-gray-800 dark:text-gray-100">
+                    <span>{feeTypeLabel(p.feeType)}</span>
+                    <span className="font-semibold">{money(p.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 flex justify-between border-t border-green-200 dark:border-green-900 pt-1 text-xs font-semibold text-green-800 dark:text-green-300">
+                <span>Total</span><span>{money(totalEntered)}</span>
               </p>
-              <div className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
-                <div><p className="text-xs text-green-600 dark:text-green-400">Required</p><p className="break-words font-semibold text-gray-900 dark:text-gray-100">{money(summaryRow.required)}</p></div>
-                <div><p className="text-xs text-green-600 dark:text-green-400">Paid</p><p className="break-words font-semibold text-gray-900 dark:text-gray-100">{money(summaryRow.paid)}</p></div>
-                <div><p className="text-xs text-green-600 dark:text-green-400">Balance</p><p className="break-words font-semibold text-gray-900 dark:text-gray-100">{money(summaryRow.balance)}</p></div>
-              </div>
-              {isPositive(form.amount) && (
-                <p className="mt-2 text-center text-xs font-medium text-green-800">
-                  Remaining after this payment: {money(Math.max(0, remainingAfter))}
-                </p>
-              )}
+              <p className="mt-1 text-xs text-green-700 dark:text-green-400">
+                Student balance after this payment: {money(overallRemaining)}
+              </p>
             </div>
           )}
 
@@ -575,41 +684,23 @@ export default function Payments() {
                   ))}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* The question: is this amount for the uniform, or toward their other debts? */}
-          {uniformBal && uniformBal.remaining > 0 && isPositive(form.amount) && (
-            <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 p-3 text-sm">
-              <p className="font-semibold text-amber-900">Is {money(form.amount)} sufficient for the uniform?</p>
-              <p className="mt-0.5 text-xs text-amber-800">
-                Uniform still outstanding: {money(uniformBal.remaining)} ({money(uniformBal.paid)} already paid of the {money(uniformBal.packageTotal)} package).
-              </p>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, feeType: 'UNIFORM' }))}
-                  className={`rounded-lg border px-3 py-2 text-left text-sm font-medium transition-colors ${
-                    form.feeType === 'UNIFORM' ? 'border-green-600 bg-green-600 text-white' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  <i className="bi bi-check-circle-fill mr-1" /> Yes — pay toward the uniform
-                </button>
-                <button
-                  type="button"
-                  onClick={applyToOtherDebts}
-                  className={`rounded-lg border px-3 py-2 text-left text-sm font-medium transition-colors ${
-                    form.feeType !== 'UNIFORM' ? 'border-green-600 bg-green-600 text-white' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  <i className="bi bi-journal-arrow-up mr-1" /> No — add it to their total outstanding debt
-                </button>
+              <div className="mt-2">
+                {lines.some((l) => l.feeType === 'UNIFORM') ? (
+                  <button type="button" onClick={removeUniformLines} className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline">
+                    Remove the uniform line
+                  </button>
+                ) : (
+                  uniformBal.remaining > 0 && (
+                    <button
+                      type="button"
+                      onClick={addUniformLine}
+                      className="rounded-lg border border-blue-300 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-medium text-blue-700 dark:border-blue-800 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-950/40"
+                    >
+                      <i className="bi bi-tag" /> Add a uniform line ({money(uniformBal.remaining)} remaining)
+                    </button>
+                  )
+                )}
               </div>
-              {form.feeType === 'UNIFORM' && Number(form.amount) > uniformBal.remaining && (
-                <p className="mt-2 text-xs font-medium text-amber-800">
-                  {money(Number(form.amount) - uniformBal.remaining)} above the remaining uniform balance will be recorded as a uniform overpayment.
-                </p>
-              )}
             </div>
           )}
 
