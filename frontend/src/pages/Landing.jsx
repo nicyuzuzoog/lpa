@@ -7,80 +7,116 @@ const BENEFITS = [
   { icon: 'bi-bar-chart-line', title: 'Reports & Exports', text: 'Financial and uniform reports exported to PDF or Excel.' },
   { icon: 'bi-shield-lock', title: 'Security & Audit', text: 'Role-based access, hashed passwords and an immutable audit trail.' },
   { icon: 'bi-bell', title: 'Notifications', text: 'In-app alerts for payments and user activity.' },
+  { icon: 'bi-mortarboard', title: 'Teaching & Records', text: 'Attendance, assessments and student records kept in one place.' },
 ];
 
 export default function Landing() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white dark:bg-gray-950">
-      <header className="sticky top-0 z-20 border-b border-green-100 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
+    <div className="min-h-screen overflow-x-hidden">
+      <header className="sticky top-0 z-20 border-b border-gold-100/70 bg-cream-50/85 backdrop-blur-md dark:border-ink-800 dark:bg-ink-950/85">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-2 animate-fade-in">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-700 text-sm font-bold text-white">L</div>
-            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Light Peace Academy</span>
+          <div className="animate-fade-in flex items-center gap-3">
+            <img src="/img/crest.svg" alt="" aria-hidden="true" className="h-10 w-10" />
+            <span className="font-display text-base font-semibold text-ink-900 dark:text-cream-50">Light Peace Academy</span>
           </div>
           <Link
             to={user ? '/app' : '/login'}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-green-700 hover:shadow-lg"
+            className="shimmer rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-800 px-5 py-2 text-sm font-medium text-white shadow-[0_12px_26px_-14px_rgba(6,78,59,0.9)] transition-all hover:-translate-y-0.5"
           >
             {user ? 'Open Dashboard' : 'Login'}
           </Link>
         </div>
       </header>
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-green-700 to-green-800">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="animate-blob absolute -left-16 top-6 h-64 w-64 rounded-full bg-green-400/20 blur-3xl" />
-          <div className="animate-blob delay-300 absolute -right-10 top-24 h-72 w-72 rounded-full bg-emerald-300/20 blur-3xl" />
-          <div className="animate-blob delay-700 absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-lime-300/10 blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-6xl px-4 py-16 text-center sm:px-6 sm:py-24">
-          <span className="animate-fade-up inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-green-100">
+      <section className="relative overflow-hidden">
+        <img src="/img/campus.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="lux-photo-overlay absolute inset-0" />
+        <div className="relative mx-auto max-w-6xl px-4 py-20 text-center sm:px-6 sm:py-28">
+          <span className="animate-fade-up inline-block rounded-full border border-gold-400/40 bg-white/5 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-200 backdrop-blur">
             School Management &amp; Accounting
           </span>
-          <h1 className="animate-fade-up delay-100 mx-auto mt-5 max-w-3xl text-3xl font-bold leading-tight text-white sm:text-5xl">
-            Run your school’s finances and records in one place.
+          <h1 className="animate-fade-up delay-100 mx-auto mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.1] text-white sm:text-6xl">
+            Run your school’s finances and records <span className="lux-gold">in one place.</span>
           </h1>
-          <p className="animate-fade-up delay-200 mx-auto mt-4 max-w-2xl text-sm text-green-100 sm:text-base">
+          <p className="animate-fade-up delay-200 mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-emerald-50/85 sm:text-base">
             A secure, production-ready system for students, school fees, partial payments, receipts,
             uniform distribution, reports and audit logging.
           </p>
-          <div className="animate-fade-up delay-300 mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="animate-fade-up delay-300 mt-9 flex flex-wrap items-center justify-center gap-3">
             <Link
               to="/login"
-              className="shimmer rounded-lg bg-white px-6 py-3 text-sm font-semibold text-green-800 shadow-lg transition-transform hover:-translate-y-0.5 hover:bg-green-50"
+              className="shimmer rounded-xl bg-gradient-to-b from-gold-300 to-gold-500 px-7 py-3 text-sm font-semibold text-ink-950 shadow-lg transition-transform hover:-translate-y-0.5"
             >
               Login to the System
             </Link>
-            <div className="rounded-lg border border-white/25 px-5 py-3 text-sm text-green-100">
+            <div className="rounded-xl border border-white/20 px-5 py-3 text-sm text-emerald-50/80 backdrop-blur">
               Accounts are created by the Super Admin
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <h2 className="animate-fade-up text-center text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">Everything the school office needs</h2>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <div className="text-center">
+          <p className="lux-eyebrow">Everything in one place</p>
+          <h2 className="animate-fade-up mt-2 font-display text-2xl font-semibold text-ink-900 dark:text-cream-50 sm:text-3xl">
+            Everything the school office needs
+          </h2>
+          <div className="lux-rule mx-auto mt-4 w-28" />
+        </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {BENEFITS.map((b, i) => (
             <div
               key={b.title}
-              className={`animate-fade-up delay-${Math.min((i % 3) * 100 + 100, 500)} group rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-green-200 hover:shadow-lg`}
+              className={`animate-fade-up delay-${Math.min((i % 3) * 100 + 100, 500)} lux-card lux-topline group rounded-2xl p-5 transition-transform duration-300 hover:-translate-y-1`}
             >
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400 transition-colors group-hover:bg-green-600 group-hover:text-white">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-b from-gold-100 to-gold-200 text-gold-700 transition-colors group-hover:from-emerald-600 group-hover:to-emerald-800 group-hover:text-gold-200 dark:from-ink-800 dark:to-ink-900 dark:text-gold-400">
                 <i className={`bi ${b.icon} text-lg`} />
               </div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{b.title}</h3>
+              <h3 className="font-display text-base font-semibold text-ink-900 dark:text-cream-50">{b.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-gray-500 dark:text-gray-400">{b.text}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <footer className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-center sm:flex-row sm:px-6 sm:text-left">
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+        <div className="lux-card overflow-hidden rounded-3xl sm:grid sm:grid-cols-2">
+          <div className="relative min-h-[240px]">
+            <img src="/img/hall.jpg" alt="Lecture hall" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-ink-950/40 to-transparent" />
+          </div>
+          <div className="p-7 sm:p-10">
+            <p className="lux-eyebrow">Built for real school days</p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-ink-900 dark:text-cream-50">
+              From the classroom to the bursar’s desk
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+              Every fee, receipt and record is tracked end to end — so teachers, accountants and administrators
+              always see the same, up-to-date picture.
+            </p>
+            <ul className="mt-6 space-y-3">
+              {['Role-based access for every staff member', 'Instant balances and printable receipts', 'A complete, tamper-proof audit trail'].map((t) => (
+                <li key={t} className="flex items-start gap-3 text-sm text-ink-700 dark:text-cream-100/90">
+                  <i className="bi bi-patch-check-fill mt-0.5 text-gold-500" />
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              to="/login"
+              className="mt-7 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-800 px-5 py-2.5 text-sm font-medium text-white shadow-[0_12px_26px_-14px_rgba(6,78,59,0.9)] transition-transform hover:-translate-y-0.5"
+            >
+              Get started <i className="bi bi-arrow-right" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-gold-100/70 bg-cream-100/70 dark:border-ink-800 dark:bg-ink-950">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-7 text-center sm:flex-row sm:px-6 sm:text-left">
           <p className="text-xs text-gray-500 dark:text-gray-400">© {new Date().getFullYear()} Light Peace Academy — School Management System</p>
           <p className="text-xs text-gray-400 dark:text-gray-500">Secure · Role-based access · Audit logged</p>
         </div>

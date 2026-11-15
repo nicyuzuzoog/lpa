@@ -118,26 +118,25 @@ export default function Layout() {
 
   const sidebar = (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2.5 px-5 py-5">
+      <div className="relative flex items-center gap-3 px-5 py-6">
         {schoolLogo ? (
           <img
             src={schoolLogo}
             alt={schoolName}
-            className="h-9 w-9 shrink-0 rounded-lg border border-white/20 bg-white object-cover"
+            className="h-11 w-11 shrink-0 rounded-xl border border-gold-400/40 bg-white object-cover"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
           />
         ) : (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-sm font-bold text-white">
-            {initials(schoolName) || 'GS'}
-          </div>
+          <img src="/img/crest.svg" alt="" aria-hidden="true" className="h-11 w-11 shrink-0 drop-shadow" />
         )}
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-white">{schoolName}</p>
-          <p className="truncate text-xs text-green-200">Management System</p>
+          <p className="truncate font-display text-[15px] font-semibold text-white">{schoolName}</p>
+          <p className="truncate text-[11px] uppercase tracking-[0.16em] text-gold-300/80">Management System</p>
         </div>
       </div>
+      <div className="lux-rule mx-4 mb-3" />
 
       <nav className="scroll-thin flex-1 space-y-5 overflow-y-auto px-3 pb-6">
         {NAV.map((group) => {
@@ -145,7 +144,7 @@ export default function Layout() {
           if (!items.length) return null;
           return (
             <div key={group.section}>
-              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-green-300/70">
+              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-300/60">
                 {group.section}
               </p>
               <ul className="space-y-0.5">
@@ -155,15 +154,19 @@ export default function Layout() {
                       to={item.to}
                       end={item.end}
                       className={({ isActive }) =>
-                        `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                        `flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-200 ${
                           isActive
-                            ? 'bg-green-600 font-semibold text-white shadow-sm'
-                            : 'text-green-100/90 hover:bg-white/10 hover:text-white'
+                            ? 'bg-white/10 font-semibold text-white ring-1 ring-gold-400/30'
+                            : 'text-emerald-100/75 hover:bg-white/5 hover:text-white'
                         }`
                       }
                     >
-                      <i className={`${item.icon} w-5 text-center text-base opacity-80`} />
-                      <span className="truncate">{item.label}</span>
+                      {({ isActive }) => (
+                        <>
+                          <i className={`${item.icon} w-5 text-center text-base ${isActive ? 'text-gold-300' : 'opacity-70'}`} />
+                          <span className="truncate">{item.label}</span>
+                        </>
+                      )}
                     </NavLink>
                   </li>
                 ))}
@@ -173,20 +176,20 @@ export default function Layout() {
         })}
       </nav>
 
-      <div className="border-t border-white/10 px-4 py-4">
+      <div className="border-t border-gold-400/15 px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-500 text-xs font-bold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-gold-300 to-gold-500 text-xs font-bold text-ink-900">
             {initials(user?.fullName)}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-white">{user?.fullName}</p>
-            <p className="truncate text-xs text-green-200">{roleLabel(user?.role)}</p>
+            <p className="truncate text-xs text-gold-300/80">{roleLabel(user?.role)}</p>
           </div>
           <button
             onClick={handleLogout}
             title="Logout"
             aria-label="Logout"
-            className="rounded-lg p-2 text-green-200 hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-2 text-gold-200/80 transition-colors hover:bg-white/10 hover:text-white"
           >
             <i className="bi bi-box-arrow-right" />
           </button>
@@ -198,34 +201,34 @@ export default function Layout() {
   const pageTitle = currentPageLabel(location.pathname);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-green-900 lg:block no-print dark:bg-gray-900">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-gradient-to-b from-ink-900 via-ink-900 to-ink-950 lg:block no-print dark:from-ink-950 dark:via-ink-950 dark:to-black">
         {sidebar}
       </aside>
 
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden no-print">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="animate-fade-in absolute inset-y-0 left-0 flex w-[min(18rem,85vw)] flex-col bg-green-900 shadow-2xl dark:bg-gray-900">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="animate-fade-in absolute inset-y-0 left-0 flex w-[min(18rem,85vw)] flex-col bg-gradient-to-b from-ink-900 to-ink-950 shadow-2xl">
             {sidebar}
           </aside>
         </div>
       )}
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-green-100 bg-white px-3 sm:px-6 no-print dark:border-gray-800 dark:bg-gray-900">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-gold-100/70 bg-white/85 px-3 backdrop-blur-md sm:px-6 no-print dark:border-ink-800 dark:bg-ink-900/80">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <button
               onClick={() => setMobileOpen(true)}
-              className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden dark:text-gray-300 dark:hover:bg-gray-800"
+              className="rounded-lg p-2 text-ink-700 hover:bg-gold-50 lg:hidden dark:text-cream-100 dark:hover:bg-ink-800"
               aria-label="Open menu"
             >
               <i className="bi bi-list text-xl leading-none" />
             </button>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100 sm:hidden">
+              <p className="truncate font-display text-base font-semibold text-ink-900 dark:text-cream-50 sm:hidden">
                 {pageTitle || 'Dashboard'}
               </p>
               <p className="hidden truncate text-sm text-gray-500 sm:block dark:text-gray-400">
@@ -239,19 +242,19 @@ export default function Layout() {
               onClick={toggle}
               title={resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               aria-label={resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="rounded-lg p-2 text-ink-700 transition-colors hover:bg-gold-50 dark:text-cream-100 dark:hover:bg-ink-800"
             >
               <i className={`bi ${resolved === 'dark' ? 'bi-brightness-high' : 'bi-moon-stars'} text-lg leading-none`} />
             </button>
 
             <button
               onClick={() => navigate('/app/notifications')}
-              className="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="relative rounded-lg p-2 text-ink-700 transition-colors hover:bg-gold-50 dark:text-cream-100 dark:hover:bg-ink-800"
               aria-label="Notifications"
             >
               <i className="bi bi-bell text-lg leading-none" />
               {unread > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-ink-950">
                   {unread > 9 ? '9+' : unread}
                 </span>
               )}
@@ -260,32 +263,32 @@ export default function Layout() {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-gray-100 sm:px-2 dark:hover:bg-gray-800"
+                className="flex items-center gap-2 rounded-xl px-1.5 py-1.5 transition-colors hover:bg-gold-50 sm:px-2 dark:hover:bg-ink-800"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-green-600 text-[11px] font-bold text-white">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-b from-gold-300 to-gold-500 text-[11px] font-bold text-ink-900">
                   {initials(user?.fullName)}
                 </span>
-                <span className="hidden max-w-[140px] truncate text-sm font-medium text-gray-700 sm:block dark:text-gray-200">
+                <span className="hidden max-w-[140px] truncate text-sm font-medium text-ink-800 sm:block dark:text-cream-100">
                   {user?.fullName}
                 </span>
               </button>
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 z-40 mt-1 w-52 rounded-xl border border-gray-100 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                    <div className="border-b border-gray-50 px-4 py-2 dark:border-gray-700">
-                      <p className="truncate text-sm font-semibold text-gray-800 dark:text-gray-100">{user?.fullName}</p>
+                  <div className="lux-card absolute right-0 z-40 mt-2 w-52 rounded-2xl py-1">
+                    <div className="border-b border-gold-100/70 px-4 py-2 dark:border-ink-700">
+                      <p className="truncate text-sm font-semibold text-ink-900 dark:text-cream-50">{user?.fullName}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{roleLabel(user?.role)}</p>
                     </div>
                     <button
                       onClick={() => navigate('/app/profile')}
-                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700/60"
+                      className="block w-full px-4 py-2 text-left text-sm text-ink-700 hover:bg-gold-50 dark:text-cream-100 dark:hover:bg-ink-800"
                     >
                       My Profile
                     </button>
                     <button
                       onClick={() => navigate('/app/settings')}
-                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700/60"
+                      className="block w-full px-4 py-2 text-left text-sm text-ink-700 hover:bg-gold-50 dark:text-cream-100 dark:hover:bg-ink-800"
                     >
                       Settings
                     </button>
@@ -302,7 +305,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6 sm:py-6">
+        <main className="mx-auto max-w-[1600px] px-3 py-5 sm:px-6 sm:py-7">
           <Outlet />
         </main>
       </div>

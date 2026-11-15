@@ -218,7 +218,7 @@ export default function AssessmentDetail() {
         <StatCard label="Status" value={item.status} icon="bi-lock" tone={locked ? 'amber' : 'green'} />
       </div>
 
-      <div className="scroll-thin mb-4 flex gap-1 overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 shadow-sm">
+      <div className="scroll-thin mb-4 flex gap-1 overflow-x-auto rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-1 shadow-sm">
         <button
           onClick={() => setTab('marks')}
           className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${tab === 'marks' ? 'bg-green-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
@@ -240,7 +240,7 @@ export default function AssessmentDetail() {
               This assessment is closed. Marks are read-only.
             </div>
           )}
-          <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-sm">
             <div className="scroll-thin overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-800 text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800/40">
@@ -251,7 +251,7 @@ export default function AssessmentDetail() {
                     <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Remark</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                <tbody className="divide-y divide-gold-100/60 dark:divide-ink-800">
                   {data.students.map((s, i) => {
                     const m = marks[s._id] || { score: '', remark: '' };
                     const n = m.score === '' ? null : Number(m.score);
@@ -316,7 +316,7 @@ export default function AssessmentDetail() {
             <Badge className="bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400">FAIL &lt; {report.passMark}</Badge>
             <span>{report.summary.ungraded} not graded</span>
           </div>
-          <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-sm">
             <div className="scroll-thin overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-800 text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800/40">
@@ -328,7 +328,7 @@ export default function AssessmentDetail() {
                     <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Result</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                <tbody className="divide-y divide-gold-100/60 dark:divide-ink-800">
                   {[...report.rows]
                     .sort((a, b) => (a.position || 999) - (b.position || 999))
                     .map((r) => (

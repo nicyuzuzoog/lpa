@@ -10,26 +10,28 @@ import { Button, Select } from '../components/Fields.jsx';
 
 function BrandHeader({ brand, user, role, years, year, term, setYear, setTerm, terms }) {
   return (
-    <div className="mb-4 flex flex-col gap-3 rounded-xl border border-green-100 bg-white dark:bg-gray-900 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3">
+    <div className="lux-topline relative mb-5 overflow-hidden rounded-3xl border border-gold-400/25 shadow-lux-lg">
+      <img src="/img/hall.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+      <div className="lux-photo-overlay absolute inset-0" />
+      <div className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+      <div className="flex items-center gap-4">
         {brand?.logo ? (
           <img
             src={brand.logo}
             alt={`${brand.name} logo`}
-            className="h-12 w-12 shrink-0 rounded-xl border border-gray-100 dark:border-gray-800 object-cover"
+            className="h-14 w-14 shrink-0 rounded-2xl border border-gold-400/40 object-cover"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
           />
         ) : (
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-600 text-lg font-bold text-white">
-            <i className="bi bi-mortarboard-fill" />
-          </div>
+          <img src="/img/crest.svg" alt="" aria-hidden="true" className="h-14 w-14 shrink-0 drop-shadow-lg" />
         )}
         <div>
-          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{brand?.name || 'School Management System'}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Welcome back, <span className="font-semibold text-gray-700 dark:text-gray-200">{user?.fullName}</span> · {roleLabel(role)}
+          <p className="lux-eyebrow !text-gold-300">Welcome back</p>
+          <p className="font-display text-xl font-semibold text-white">{brand?.name || 'School Management System'}</p>
+          <p className="mt-0.5 text-xs text-emerald-50/80">
+            {user?.fullName} · {roleLabel(role)}
           </p>
         </div>
       </div>
@@ -53,13 +55,14 @@ function BrandHeader({ brand, user, role, years, year, term, setYear, setTerm, t
           ))}
         </Select>
       </div>
+      </div>
     </div>
   );
 }
 
 function AttendanceTrend({ trend, total }) {
   if (!trend?.length) {
-    return <p className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 text-sm text-gray-500 dark:text-gray-400">No attendance recorded in the last 7 days.</p>;
+    return <p className="lux-card rounded-2xl p-4 text-sm text-gray-500 dark:text-gray-400">No attendance recorded in the last 7 days.</p>;
   }
   const max = Math.max(1, ...trend.map((d) => d.present + d.absent + d.late));
   return (
@@ -97,7 +100,7 @@ function TeacherDashboard({ data }) {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <div className="lux-card rounded-2xl p-4">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Today's Attendance — {t.homeroom?.name || 'No homeroom'}</h2>
               <Link to="/app/attendance" className="text-xs font-medium text-green-700 dark:text-green-400 hover:underline">Mark attendance</Link>
@@ -114,7 +117,7 @@ function TeacherDashboard({ data }) {
             )}
           </div>
 
-          <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <div className="lux-card rounded-2xl p-4">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Attendance — Last 7 Days</h2>
               <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
@@ -148,7 +151,7 @@ function TeacherDashboard({ data }) {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <div className="lux-card rounded-2xl p-4">
             <div className="mb-3 grid grid-cols-2 gap-3">
               <StatCard label="Assessments" value={t.assessments?.total || 0} icon="bi-clipboard-check" />
               <StatCard label="Open" value={t.assessments?.open || 0} icon="bi-unlock" tone="amber" />
@@ -157,7 +160,7 @@ function TeacherDashboard({ data }) {
             {(t.classes || []).length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">No classes assigned yet.</p>
             ) : (
-              <ul className="divide-y divide-gray-50 dark:divide-gray-800 overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+              <ul className="lux-card divide-y divide-gold-100/60 dark:divide-ink-800 overflow-hidden rounded-2xl">
                 {t.classes.map((c) => (
                   <li key={c.id} className="px-3 py-2.5 text-sm">
                     <div className="flex items-center justify-between">
@@ -234,9 +237,9 @@ function StaffDashboard({ data }) {
               <Link to="/app/audit" className="text-xs font-medium text-green-700 dark:text-green-400 hover:underline">Audit log</Link>
             </div>
             {(data.recentAudit || []).length === 0 ? (
-              <p className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 text-sm text-gray-500 dark:text-gray-400">No activity recorded yet.</p>
+              <p className="lux-card rounded-2xl p-4 text-sm text-gray-500 dark:text-gray-400">No activity recorded yet.</p>
             ) : (
-              <ul className="divide-y divide-gray-50 dark:divide-gray-800 overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+              <ul className="lux-card divide-y divide-gold-100/60 dark:divide-ink-800 overflow-hidden rounded-2xl">
                 {data.recentAudit.map((a) => (
                   <li key={a._id} className="px-4 py-2.5 text-sm">
                     <p className="text-gray-700 dark:text-gray-200">
@@ -256,7 +259,7 @@ function StaffDashboard({ data }) {
                 <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Latest Notifications</h2>
                 <Link to="/app/notifications" className="text-xs font-medium text-green-700 dark:text-green-400 hover:underline">View all</Link>
               </div>
-              <ul className="divide-y divide-gray-50 dark:divide-gray-800 overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+              <ul className="lux-card divide-y divide-gold-100/60 dark:divide-ink-800 overflow-hidden rounded-2xl">
                 {data.recentNotifications.slice(0, 5).map((n) => (
                   <li key={n._id} className="px-4 py-2.5 text-sm">
                     <p className="font-medium text-gray-700 dark:text-gray-200">{n.title}</p>

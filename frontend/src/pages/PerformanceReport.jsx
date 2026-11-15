@@ -152,7 +152,7 @@ export default function PerformanceReport() {
             ))}
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-sm">
             <div className="scroll-thin overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-800 text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800/40">
@@ -164,7 +164,7 @@ export default function PerformanceReport() {
                     <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Overall</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                <tbody className="divide-y divide-gold-100/60 dark:divide-ink-800">
                   {[...rows]
                     .sort((a, b) => (a.position || 999) - (b.position || 999))
                     .map((r) => (

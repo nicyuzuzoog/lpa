@@ -36,7 +36,7 @@ export default function Profile() {
       <PageHeader title="My Profile" subtitle="Your account information." />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+        <div className="rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-200">Account Details</h2>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between"><dt className="text-gray-500 dark:text-gray-400">Full Name</dt><dd className="font-medium">{user?.fullName}</dd></div>
@@ -48,7 +48,7 @@ export default function Profile() {
           </dl>
         </div>
 
-        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+        <div className="rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-200">Change Password</h2>
           <form onSubmit={changePassword} className="space-y-4">
             <Field label="Current Password" required>

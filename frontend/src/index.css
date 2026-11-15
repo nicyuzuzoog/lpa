@@ -4,6 +4,38 @@
 /* Class-based dark mode: toggle by adding `dark` on <html> (see ThemeContext). */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ------------------------------------------------------------------ */
+/* Design tokens — "Light Peace Academy" luxury theme                 */
+/* Deep emerald + champagne gold + warm cream                         */
+/* ------------------------------------------------------------------ */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Playfair Display', 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+
+  --color-cream-50: #faf8f2;
+  --color-cream-100: #f4f0e6;
+  --color-cream-200: #e9e2d2;
+
+  --color-ink-700: #17332b;
+  --color-ink-800: #0f241d;
+  --color-ink-900: #081a14;
+  --color-ink-950: #04100c;
+
+  --color-gold-50: #fdfaf1;
+  --color-gold-100: #f9f0d7;
+  --color-gold-200: #f1e0ac;
+  --color-gold-300: #e7cb79;
+  --color-gold-400: #dcb352;
+  --color-gold-500: #c99a33;
+  --color-gold-600: #a97c24;
+  --color-gold-700: #855e1d;
+  --color-gold-800: #5f4316;
+  --color-gold-900: #3e2c0f;
+
+  --shadow-lux: 0 20px 45px -26px rgba(8, 26, 20, 0.5);
+  --shadow-lux-lg: 0 30px 70px -32px rgba(8, 26, 20, 0.55);
+}
+
 :root {
   color-scheme: light;
 }
@@ -13,8 +45,91 @@
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100;
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  @apply text-gray-900 antialiased dark:text-gray-100;
+  font-family: var(--font-sans);
+  background-color: #f7f4ec;
+  background-image:
+    radial-gradient(1200px 620px at 100% -12%, rgba(220, 179, 82, 0.12), transparent 62%),
+    radial-gradient(1000px 560px at -12% 0%, rgba(10, 50, 38, 0.09), transparent 58%);
+  background-attachment: fixed;
+}
+
+.dark body {
+  background-color: #04100c;
+  background-image:
+    radial-gradient(1200px 620px at 100% -12%, rgba(220, 179, 82, 0.1), transparent 62%),
+    radial-gradient(1000px 560px at -12% 0%, rgba(18, 80, 60, 0.22), transparent 58%);
+}
+
+/* Serif display headings */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------------------------ */
+/* Luxury helpers                                                     */
+/* ------------------------------------------------------------------ */
+.lux-gold {
+  background-image: linear-gradient(100deg, #f7ebc4 0%, #dcb352 34%, #a97c24 62%, #f2e2ac 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lux-eyebrow {
+  @apply text-[11px] font-semibold uppercase tracking-[0.18em];
+  color: #a97c24;
+}
+.dark .lux-eyebrow {
+  color: #dcb352;
+}
+
+/* Hairline gold rule */
+.lux-rule {
+  height: 1px;
+  background-image: linear-gradient(90deg, transparent, rgba(201, 154, 51, 0.75), transparent);
+}
+
+/* Card surface with a fine gold edge */
+.lux-card {
+  border: 1px solid rgba(201, 154, 51, 0.32);
+  background-image: linear-gradient(180deg, #ffffff 0%, #faf8f2 100%);
+  box-shadow: var(--shadow-lux);
+}
+.dark .lux-card {
+  border-color: rgba(220, 179, 82, 0.2);
+  background-image: linear-gradient(180deg, #0f241d 0%, #081a14 100%);
+}
+
+/* Gold top hairline used on premium surfaces */
+.lux-topline {
+  position: relative;
+}
+.lux-topline::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  background-image: linear-gradient(90deg, transparent, rgba(220, 179, 82, 0.85), transparent);
+}
+
+/* Photo-backed overlay for hero imagery — light enough that the photo reads,
+   dark enough at the edges for legible white text. */
+.lux-photo-overlay {
+  background-image:
+    linear-gradient(180deg, rgba(4, 16, 12, 0.42) 0%, rgba(4, 16, 12, 0.56) 58%, rgba(4, 16, 12, 0.86) 100%),
+    linear-gradient(90deg, rgba(4, 16, 12, 0.72) 0%, rgba(4, 16, 12, 0.18) 62%, rgba(4, 16, 12, 0.46) 100%);
+}
+
+/* Lighter variant where a single image fills a narrow column (e.g. login panel). */
+.lux-photo-overlay-soft {
+  background-image:
+    linear-gradient(180deg, rgba(4, 16, 12, 0.34) 0%, rgba(4, 16, 12, 0.5) 62%, rgba(4, 16, 12, 0.8) 100%),
+    linear-gradient(90deg, rgba(4, 16, 12, 0.62) 0%, rgba(4, 16, 12, 0.12) 70%, rgba(4, 16, 12, 0.34) 100%);
 }
 
 /* Thin scrollbars for tables and sidebar */
@@ -23,11 +138,11 @@ body {
   height: 6px;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: #d8cdb0;
   border-radius: 9999px;
 }
 .dark .scroll-thin::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: #3f5b4f;
 }
 .scroll-thin::-webkit-scrollbar-track {
   background: transparent;
@@ -35,7 +150,7 @@ body {
 
 /* Softer, adaptive selection color */
 ::selection {
-  background: rgb(34 197 94 / 0.25);
+  background: rgb(220 179 82 / 0.3);
 }
 
 /* Number inputs: drop spinners for a cleaner look */

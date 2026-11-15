@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Light Peace Academy crest">
+  <defs>
+    <linearGradient id="lpa-emerald" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#12503c" />
+      <stop offset="0.55" stop-color="#0a3226" />
+      <stop offset="1" stop-color="#04140f" />
+    </linearGradient>
+    <linearGradient id="lpa-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7ebc4" />
+      <stop offset="0.42" stop-color="#dcb352" />
+      <stop offset="0.72" stop-color="#a97c24" />
+      <stop offset="1" stop-color="#f2e2ac" />
+    </linearGradient>
+    <linearGradient id="lpa-flame" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#a97c24" />
+      <stop offset="0.5" stop-color="#dcb352" />
+      <stop offset="1" stop-color="#f7ebc4" />
+    </linearGradient>
+    <linearGradient id="lpa-page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdf8ea" />
+      <stop offset="1" stop-color="#e3d3a6" />
+    </linearGradient>
+  </defs>
+
+  <!-- Shield -->
+  <path d="M64 4 L116 21 V63 C116 93 93 113 64 124 C35 113 12 93 12 63 V21 Z"
+        fill="url(#lpa-emerald)" stroke="url(#lpa-gold)" stroke-width="3.5" stroke-linejoin="round" />
+  <path d="M64 11 L110 25 V63 C110 89 90 107 64 117 C38 107 18 89 18 63 V25 Z"
+        fill="none" stroke="url(#lpa-gold)" stroke-width="1" opacity="0.6" stroke-linejoin="round" />
+
+  <!-- Torch flame -->
+  <path d="M64 26 C70.5 37 76 42 76 51 C76 60 70.6 66 64 66 C57.4 66 52 60 52 51 C52 42 57.5 37 64 26 Z"
+        fill="url(#lpa-flame)" />
+  <path d="M64 38 C67.4 45 69.5 48.4 69.5 53.4 C69.5 58 67.2 60.6 64 60.6 C60.8 60.6 58.5 58 58.5 53.4 C58.5 48.4 60.6 45 64 38 Z"
+        fill="#fdf8ea" opacity="0.85" />
+
+  <!-- Open book -->
+  <path d="M34 78 C45 73 56 73 64 78 L64 100 C56 95 45 95 34 100 Z"
+        fill="url(#lpa-page)" stroke="url(#lpa-gold)" stroke-width="1.6" stroke-linejoin="round" />
+  <path d="M94 78 C83 73 72 73 64 78 L64 100 C72 95 83 95 94 100 Z"
+        fill="url(#lpa-page)" stroke="url(#lpa-gold)" stroke-width="1.6" stroke-linejoin="round" />
+  <path d="M64 78 V100" stroke="url(#lpa-gold)" stroke-width="1.6" stroke-linecap="round" />
+  <path d="M41 83.5 C48 81 54 81 59 83.5 M41 89 C48 86.5 54 86.5 59 89"
+        stroke="#a97c24" stroke-width="1.1" fill="none" stroke-linecap="round" opacity="0.55" />
+  <path d="M87 83.5 C80 81 74 81 69 83.5 M87 89 C80 86.5 74 86.5 69 89"
+        stroke="#a97c24" stroke-width="1.1" fill="none" stroke-linecap="round" opacity="0.55" />
+</svg>

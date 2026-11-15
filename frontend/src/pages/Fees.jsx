@@ -158,7 +158,7 @@ export default function Fees() {
         subtitle="Configure fee structures per class/term and the material & uniform components that make up the totals."
       />
 
-      <div className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 shadow-sm">
+      <div className="mb-4 flex gap-1 overflow-x-auto rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-1 shadow-sm">
         {TABS.map((t) => (
           <button
             key={t.id}

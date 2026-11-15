@@ -19,12 +19,12 @@ export default function Table({
   const bodyCols = columns.filter((c) => c !== primary && c.mobile !== false);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="lux-card overflow-hidden rounded-2xl">
       {responsive && (
-        <div className="divide-y divide-gray-100 sm:hidden dark:divide-gray-800">
+        <div className="divide-y divide-gold-100/60 sm:hidden dark:divide-ink-800">
           {rows.map((row, i) => (
             <div key={rowKey(row, i)} className={`p-4 ${rowClassName ? rowClassName(row, i) : ''}`}>
-              <div className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <div className="mb-2 text-sm font-semibold text-ink-900 dark:text-cream-50">
                 {primary.render ? primary.render(row, i) : row[primary.key] ?? '—'}
               </div>
               {bodyCols.length > 0 && (
@@ -45,22 +45,22 @@ export default function Table({
       )}
 
       <div className={`scroll-thin overflow-x-auto ${responsive ? 'hidden sm:block' : ''}`}>
-        <table className="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
-          <thead className="bg-gray-50 dark:bg-gray-800/60">
+        <table className="min-w-full divide-y divide-gold-100/70 text-sm dark:divide-ink-800">
+          <thead className="bg-cream-100/80 dark:bg-ink-800/70">
             <tr>
               {columns.map((c) => (
                 <th key={c.key}
-                  className={`whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 ${c.className || ''}`}>
+                  className={`whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-700 dark:text-gold-400 ${c.className || ''}`}>
                   {c.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50 dark:divide-gray-800/70">
+          <tbody className="divide-y divide-gold-100/50 dark:divide-ink-800/70">
             {rows.map((row, i) => {
               const extra = rowClassName ? rowClassName(row, i) : '';
               return (
-                <tr key={rowKey(row, i)} className={extra ? `${extra} hover:bg-green-50/40 dark:hover:bg-gray-800/40` : 'hover:bg-green-50/40 dark:hover:bg-gray-800/40'}>
+                <tr key={rowKey(row, i)} className={extra ? `${extra} transition-colors hover:bg-gold-50/60 dark:hover:bg-ink-800/40` : 'transition-colors hover:bg-gold-50/60 dark:hover:bg-ink-800/40'}>
                   {columns.map((c) => (
                     <td key={c.key} className={`px-4 ${dense ? 'py-2' : 'py-3'} text-gray-700 dark:text-gray-300 ${c.className || ''}`}>
                       {c.render ? c.render(row, i) : row[c.key] ?? '—'}

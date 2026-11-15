@@ -258,7 +258,7 @@ export default function Uniforms() {
         <StatCard label="Uniform Components" value={items.length} icon="bi-clipboard-data" />
       </div>
 
-      <div className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 shadow-sm">
+      <div className="mb-4 flex gap-1 overflow-x-auto rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-1 shadow-sm">
         {[['stock', 'Stock'], ['distribution', 'Distribution'], ['issuances', 'Student Issuances']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium ${tab === id ? 'bg-green-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
             {label}
@@ -360,7 +360,7 @@ export default function Uniforms() {
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+                <div className="rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-4 shadow-sm">
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Summary</h3>
                   <dl className="mt-3 space-y-2 text-sm">
                     <div className="flex justify-between"><dt className="text-gray-500 dark:text-gray-400">Paid</dt><dd className="font-bold text-green-700 dark:text-green-400">{distTotal?.paid}</dd></div>
@@ -370,7 +370,7 @@ export default function Uniforms() {
                     <div className="flex justify-between"><dt className="text-gray-500 dark:text-gray-400">Paid Value</dt><dd className="font-semibold">{money(distTotal?.paidValue)}</dd></div>
                   </dl>
                 </div>
-                <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+                <div className="rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-4 shadow-sm">
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Stock by Size</h3>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {Object.entries(distribution.bySize || {}).map(([k, v]) => (
@@ -378,7 +378,7 @@ export default function Uniforms() {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+                <div className="rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-4 shadow-sm">
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Stock by Gender</h3>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {Object.entries(distribution.byGender || {}).map(([k, v]) => (

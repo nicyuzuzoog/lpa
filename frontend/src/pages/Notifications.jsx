@@ -92,11 +92,11 @@ export default function Notifications() {
       {loading ? (
         <Spinner />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-sm">
           {rows.length === 0 ? (
             <p className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">No notifications yet.</p>
           ) : (
-            <ul className="divide-y divide-gray-50 dark:divide-gray-800">
+            <ul className="divide-y divide-gold-100/60 dark:divide-ink-800">
               {rows.map((n) => {
                 const read = isRead(n);
                 return (

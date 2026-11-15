@@ -106,7 +106,7 @@ export default function AcademicYears() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {items.map((y) => (
-            <div key={y._id} className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+            <div key={y._id} className="rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">

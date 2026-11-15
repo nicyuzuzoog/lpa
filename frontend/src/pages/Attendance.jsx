@@ -173,7 +173,7 @@ export default function Attendance() {
         <StatCard label="Not marked" value={summary.unmarked} icon="bi-question-circle" />
       </div>
 
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 shadow-sm">
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-3 shadow-sm">
         <Field label="Class">
           <Select
             value={classId}
@@ -195,9 +195,9 @@ export default function Attendance() {
       ) : !rows.length ? (
         <EmptyState title="No students" message="This class has no active students." />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 shadow-sm">
           {/* Mobile cards */}
-          <div className="divide-y divide-gray-50 dark:divide-gray-800 sm:hidden">
+          <div className="divide-y divide-gold-100/60 dark:divide-ink-800 sm:hidden">
             {rows.map((r, i) => (
               <div key={r._id} className={`space-y-3 p-4 ${r.status === 'ABSENT' ? 'bg-red-50/60 dark:bg-red-950/30' : ''}`}>
                 <div className="flex items-start justify-between gap-3">
@@ -227,7 +227,7 @@ export default function Attendance() {
                   <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Reason (required when absent)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+              <tbody className="divide-y divide-gold-100/60 dark:divide-ink-800">
                 {rows.map((r, i) => (
                   <tr key={r._id} className={r.status === 'ABSENT' ? 'bg-red-50/60 dark:bg-red-950/30' : 'hover:bg-green-50/40 dark:hover:bg-gray-800/40'}>
                     <td className="px-4 py-2 text-gray-400 dark:text-gray-500">{i + 1}</td>

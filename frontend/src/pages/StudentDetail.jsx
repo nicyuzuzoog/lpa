@@ -95,7 +95,7 @@ export default function StudentDetail() {
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+        <div className="rounded-2xl border border-gold-100/70 dark:border-ink-800 bg-white dark:bg-ink-900 p-5 shadow-sm">
           <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Student Information</h2>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-3"><dt className="text-gray-500 dark:text-gray-400">Status</dt><dd><Badge className={statusColor(s.status)}>{s.status}</Badge></dd></div>

@@ -1,4 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#059669"/>
-  <text x="32" y="44" font-family="Arial, sans-serif" font-size="34" font-weight="bold" fill="#ffffff" text-anchor="middle">G</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="f-emerald" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#12503c" />
+      <stop offset="0.55" stop-color="#0a3226" />
+      <stop offset="1" stop-color="#04140f" />
+    </linearGradient>
+    <linearGradient id="f-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7ebc4" />
+      <stop offset="0.45" stop-color="#dcb352" />
+      <stop offset="0.75" stop-color="#a97c24" />
+      <stop offset="1" stop-color="#f2e2ac" />
+    </linearGradient>
+    <linearGradient id="f-page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdf8ea" />
+      <stop offset="1" stop-color="#e3d3a6" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="26" fill="url(#f-emerald)" />
+  <rect x="6" y="6" width="116" height="116" rx="21" fill="none" stroke="url(#f-gold)" stroke-width="3" opacity="0.85" />
+  <path d="M64 26 C70.5 37 76 42 76 51 C76 60 70.6 66 64 66 C57.4 66 52 60 52 51 C52 42 57.5 37 64 26 Z" fill="url(#f-gold)" />
+  <path d="M64 38 C67.4 45 69.5 48.4 69.5 53.4 C69.5 58 67.2 60.6 64 60.6 C60.8 60.6 58.5 58 58.5 53.4 C58.5 48.4 60.6 45 64 38 Z" fill="#fdf8ea" opacity="0.85" />
+  <path d="M34 78 C45 73 56 73 64 78 L64 100 C56 95 45 95 34 100 Z" fill="url(#f-page)" stroke="url(#f-gold)" stroke-width="2" stroke-linejoin="round" />
+  <path d="M94 78 C83 73 72 73 64 78 L64 100 C72 95 83 95 94 100 Z" fill="url(#f-page)" stroke="url(#f-gold)" stroke-width="2" stroke-linejoin="round" />
+  <path d="M64 78 V100" stroke="url(#f-gold)" stroke-width="2" stroke-linecap="round" />
 </svg>

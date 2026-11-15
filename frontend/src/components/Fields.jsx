@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
 const base =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100 disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-green-500 dark:focus:ring-green-900/50 dark:disabled:bg-gray-800/60 dark:disabled:text-gray-500';
+  'w-full rounded-xl border border-gold-200/80 bg-white px-3 py-2 text-sm text-ink-900 placeholder-gray-400 transition-shadow focus:border-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-200 disabled:bg-cream-100 disabled:text-gray-500 dark:border-ink-700 dark:bg-ink-900 dark:text-cream-50 dark:placeholder-gray-500 dark:focus:border-gold-500 dark:focus:ring-gold-900/50 dark:disabled:bg-ink-800/60 dark:disabled:text-gray-500';
 
 export function Field({ label, required, hint, children, className = '' }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <span className="mb-1 block text-sm font-medium text-ink-700 dark:text-cream-100/90">
         {label} {required && <span className="text-red-500">*</span>}
       </span>
       {children}
@@ -29,7 +29,7 @@ export function PasswordInput({ className = '', ...props }) {
         onClick={() => setShow((s) => !s)}
         title={show ? 'Hide password' : 'Show password'}
         aria-label={show ? 'Hide password' : 'Show password'}
-        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-400 transition-colors hover:text-green-600 dark:hover:text-green-400"
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-400 transition-colors hover:text-gold-600 dark:hover:text-gold-400"
         tabIndex={-1}
       >
         {show ? (
@@ -64,15 +64,17 @@ export function Textarea({ className = '', ...props }) {
 
 export function Button({ variant = 'primary', className = '', children, ...props }) {
   const styles = {
-    primary: 'bg-green-600 text-white hover:bg-green-700 disabled:bg-green-300 dark:bg-green-600 dark:hover:bg-green-500 dark:disabled:bg-green-900',
+    primary:
+      'bg-gradient-to-b from-emerald-600 to-emerald-800 text-white shadow-[0_12px_26px_-14px_rgba(6,78,59,0.9)] hover:from-emerald-500 hover:to-emerald-700 disabled:from-emerald-300 disabled:to-emerald-400 disabled:shadow-none dark:from-emerald-600 dark:to-emerald-800 dark:hover:from-emerald-500 dark:hover:to-emerald-700',
     secondary:
-      'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800',
-    danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 dark:bg-red-600 dark:hover:bg-red-500 dark:disabled:bg-red-900',
-    ghost: 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
+      'border border-gold-200 bg-white text-ink-700 hover:bg-gold-50 dark:border-ink-700 dark:bg-ink-800 dark:text-cream-100 dark:hover:bg-ink-700',
+    danger:
+      'bg-gradient-to-b from-red-600 to-red-700 text-white shadow-[0_12px_26px_-14px_rgba(153,27,27,0.9)] hover:from-red-500 hover:to-red-600 disabled:from-red-300 disabled:to-red-400 disabled:shadow-none',
+    ghost: 'text-ink-700 hover:bg-gold-50 dark:text-cream-100 dark:hover:bg-ink-800',
   };
   return (
     <button
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${styles[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${styles[variant]} ${className}`}
       {...props}
     >
       {children}
