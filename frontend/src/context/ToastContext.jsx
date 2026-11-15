@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
 
 const ToastContext = createContext(null);
 
@@ -23,11 +23,18 @@ export function ToastProvider({ children }) {
     [dismiss]
   );
 
-  const toast = {
-    success: (m) => push(m, 'success'),
-    error: (m) => push(m, 'error'),
-    info: (m) => push(m, 'info'),
-  };
+  // Keep the context value stable. If `toast` is a fresh object every render,
+  // any page that lists it in a useCallback dependency (and calls that callback
+  // from an effect) re-runs its loader on every toast — which spams requests and
+  // stacks duplicate error messages. Memoising it breaks that loop.
+  const toast = useMemo(
+    () => ({
+      success: (m) => push(m, 'success'),
+      error: (m) => push(m, 'error'),
+      info: (m) => push(m, 'info'),
+    }),
+    [push]
+  );
 
   const TYPE_STYLE = {
     error: { cls: 'bg-red-600 dark:bg-red-700', icon: 'bi-exclamation-triangle-fill' },
