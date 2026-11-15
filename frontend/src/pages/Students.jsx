@@ -8,7 +8,7 @@ import { isPhone, isPlausibleDob } from '../utils/validate.js';
 import { PageHeader, Spinner, Badge, Toolbar } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
 import { Modal } from '../components/Modal.jsx';
-import { Button, Field, Input, Select, Textarea } from '../components/Fields.jsx';
+import { Button, Field, Input, Select } from '../components/Fields.jsx';
 
 // Per-child fee discounts: set an amount to charge that child something other
 // than the standard class fee; blank = the usual class amount.
@@ -38,7 +38,6 @@ export default function Students() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
-  const [structures, setStructures] = useState([]);
   const [filters, setFilters] = useState({ search: '', class: '', status: '', academicYear: '', term: '' });
 
   const load = useCallback(async () => {
@@ -63,24 +62,6 @@ export default function Students() {
   useEffect(() => {
     load();
   }, [load]);
-
-  // Standard class amounts, shown as hints next to the per-child discounts.
-  useEffect(() => {
-    if (!modalOpen || !form.class || !form.academicYear || !form.term) {
-      setStructures([]);
-      return undefined;
-    }
-    let alive = true;
-    get('/fees/structures', { class: form.class, academicYear: form.academicYear, term: form.term })
-      .then((d) => alive && setStructures(d.items || []))
-      .catch(() => alive && setStructures([]));
-    return () => { alive = false; };
-  }, [modalOpen, form.class, form.academicYear, form.term]);
-
-  const standardByType = structures.reduce((acc, s) => {
-    if (s.status === 'ACTIVE') acc[s.feeType] = s.requiredAmount;
-    return acc;
-  }, {});
 
   const setFilter = (key, value) => {
     setPage(1);
@@ -343,36 +324,6 @@ export default function Students() {
               Eats at school
             </label>
           </Field>
-          <Field label="Notes" className="sm:col-span-2">
-            <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="e.g. Any additional notes about the student" />
-          </Field>
-          <div className="sm:col-span-2 space-y-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Per-child fee discounts (optional)</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">Leave blank to use the standard class amount. Set a positive number to charge this child a specific amount for that fee (e.g. a lower amount for materials).</p>
-            {FEE_OVERRIDE_TYPES.map((t) => {
-              const std = standardByType[t];
-              return (
-                <div key={t} className="grid gap-2 sm:grid-cols-[160px,1fr] sm:items-center">
-                  <Field label={feeTypeLabel(t)}>
-                    <Input
-                      type="number"
-                      min="0"
-                      inputMode="numeric"
-                      value={form.feeOverrides?.[t] ?? ''}
-                      onChange={(e) => setForm({
-                        ...form,
-                        feeOverrides: { ...(form.feeOverrides || {}), [t]: e.target.value },
-                      })}
-                      placeholder="e.g. 20000"
-                    />
-                  </Field>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 sm:mt-5">
-                    Standard for this class/term: {std != null ? `${Number(std).toLocaleString()} RWF` : 'Not set yet'}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
           <p className="sm:col-span-2 rounded-lg bg-green-50 dark:bg-green-950/40 px-3 py-2 text-xs text-green-700 dark:text-green-400">
             Guardian/parent names are not required. Mother and father phone numbers are both optional.
           </p>

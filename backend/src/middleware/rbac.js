@@ -32,9 +32,6 @@ export const PERMISSIONS = {
   'payments:reverse': ['SUPER_ADMIN', 'ACCOUNTANT'],
   'payments:delete': [],
 
-  'inventory:read': ALL,
-  'inventory:manage': ['SUPER_ADMIN', 'ACCOUNTANT'],
-
   'uniforms:read': ALL,
   'uniforms:manage': ['SUPER_ADMIN', 'ACCOUNTANT'],
   'uniforms:issue': ['SUPER_ADMIN', 'ACCOUNTANT'],

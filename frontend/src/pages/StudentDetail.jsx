@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { get } from '../services/api.js';
+import { get, put } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { money, formatDate, statusColor, feeTypeLabel, paymentMethodLabel } from '../utils/format.js';
 import { PageHeader, Spinner, Badge, StatCard } from '../components/ui.jsx';
 import Table from '../components/Table.jsx';
+import { Modal } from '../components/Modal.jsx';
+import { Button, Field, Input } from '../components/Fields.jsx';
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -14,10 +16,13 @@ export default function StudentDetail() {
   const toast = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const [discountValue, setDiscountValue] = useState('');
+  const [savingDiscount, setSavingDiscount] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
-    get(`/students/${id}`)
+    return get(`/students/${id}`)
       .then(setData)
       .catch((e) => {
         toast.error(e.message);
@@ -26,11 +31,44 @@ export default function StudentDetail() {
       .finally(() => setLoading(false));
   }, [id, navigate, toast]);
 
+  useEffect(() => {
+    load();
+  }, [load]);
+
   if (loading || !data) return <Spinner />;
 
   const s = data.item;
   const summary = data.feeSummary;
   const payments = data.payments || [];
+
+  const materialsRow = (summary?.rows || []).find((r) => r.feeType === 'MATERIALS');
+  const canDiscount = can('students:update');
+
+  // Materials-only discount: opens the amount already in force (if any) so the
+  // Super Admin / Accountant can adjust or clear it. The backend merges the
+  // override, so no other fee is touched.
+  const openDiscount = () => {
+    setDiscountValue(materialsRow?.discounted ? String(materialsRow.required) : '');
+    setDiscountOpen(true);
+  };
+
+  const saveDiscount = async () => {
+    const raw = String(discountValue).trim();
+    if (raw !== '' && (!Number.isFinite(Number(raw)) || Number(raw) < 0)) {
+      return toast.error('Enter a valid discount amount (zero or more)');
+    }
+    setSavingDiscount(true);
+    try {
+      await put(`/students/${id}`, { feeOverrides: { MATERIALS: raw === '' ? null : Number(raw) } });
+      toast.success(raw === '' ? 'Materials discount removed' : 'Materials discount saved');
+      setDiscountOpen(false);
+      await load();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setSavingDiscount(false);
+    }
+  };
 
   return (
     <div>
@@ -102,6 +140,21 @@ export default function StudentDetail() {
                 { key: 'paid', label: 'Paid', className: 'text-right', render: (r) => money(r.paid) },
                 { key: 'balance', label: 'Balance', className: 'text-right font-medium', render: (r) => money(r.balance) },
                 { key: 'status', label: 'Status', render: (r) => <Badge className={statusColor(r.status)}>{r.status.replace('_', ' ')}</Badge> },
+                {
+                  key: 'discount',
+                  label: '',
+                  className: 'text-right',
+                  render: (r) =>
+                    r.feeType === 'MATERIALS' && canDiscount ? (
+                      <button
+                        type="button"
+                        onClick={openDiscount}
+                        className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-400"
+                      >
+                        <i className="bi bi-percent" /> {r.discounted ? 'Edit discount' : 'Add discount'}
+                      </button>
+                    ) : null,
+                },
               ]}
               rows={summary.rows}
               dense
@@ -130,6 +183,7 @@ export default function StudentDetail() {
             { key: 'feeType', label: 'Fee Type', render: (r) => feeTypeLabel(r.feeType) },
             { key: 'amount', label: 'Amount', className: 'text-right font-medium', render: (r) => money(r.amount) },
             { key: 'paymentMethod', label: 'Method', render: (r) => paymentMethodLabel(r.paymentMethod) },
+            { key: 'payerName', label: 'Paid by', render: (r) => <span className="text-gray-500 dark:text-gray-400">{r.payerName || '—'}</span> },
             { key: 'balanceAfter', label: 'Balance After', className: 'text-right', render: (r) => money(r.balanceAfter) },
             { key: 'paymentDate', label: 'Date', render: (r) => formatDate(r.paymentDate, true) },
             { key: 'status', label: 'Status', render: (r) => <Badge className={statusColor(r.status)}>{r.status}</Badge> },
@@ -144,6 +198,43 @@ export default function StudentDetail() {
           emptyMessage="Payments recorded for this student will appear here."
         />
       </div>
+
+      <Modal
+        open={discountOpen}
+        onClose={() => setDiscountOpen(false)}
+        title={`Materials discount — ${s.firstName} ${s.lastName}`}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDiscountOpen(false)}>Cancel</Button>
+            <Button onClick={saveDiscount} disabled={savingDiscount}>
+              {savingDiscount ? 'Saving…' : 'Save Discount'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Set the amount this child pays for <strong>materials</strong> only. Leave it blank to
+            remove the discount and go back to the standard class amount.
+          </p>
+          <Field label="Materials amount (RWF)" hint="Blank = standard amount">
+            <Input
+              type="number"
+              min="0"
+              inputMode="numeric"
+              value={discountValue}
+              onChange={(e) => setDiscountValue(e.target.value)}
+              placeholder="e.g. 20000"
+            />
+          </Field>
+          {materialsRow?.discounted && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Standard for this class/term: {money(materialsRow.standardAmount)} — currently charging{' '}
+              <span className="font-medium text-amber-700 dark:text-amber-400">{money(materialsRow.required)}</span>.
+            </p>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

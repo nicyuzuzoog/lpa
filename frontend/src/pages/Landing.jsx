@@ -3,11 +3,10 @@ import { useAuth } from '../context/AuthContext.jsx';
 
 const BENEFITS = [
   { icon: 'bi-cash-stack', title: 'Fees & Payments', text: 'Partial payments, automatic balances, printable receipts and reversal tracking.' },
-  { icon: 'bi-box-seam', title: 'Inventory Control', text: 'Receive, issue and track stock with low-stock alerts and full history.' },
   { icon: 'bi-tags', title: 'Uniforms', text: 'Track payments separately from physical distribution, per size and gender.' },
-  { icon: 'bi-bar-chart-line', title: 'Reports & Exports', text: 'Financial, inventory and uniform reports exported to PDF or Excel.' },
+  { icon: 'bi-bar-chart-line', title: 'Reports & Exports', text: 'Financial and uniform reports exported to PDF or Excel.' },
   { icon: 'bi-shield-lock', title: 'Security & Audit', text: 'Role-based access, hashed passwords and an immutable audit trail.' },
-  { icon: 'bi-bell', title: 'Notifications', text: 'In-app alerts for payments, stock changes and user activity.' },
+  { icon: 'bi-bell', title: 'Notifications', text: 'In-app alerts for payments and user activity.' },
 ];
 
 export default function Landing() {
@@ -42,11 +41,11 @@ export default function Landing() {
             School Management &amp; Accounting
           </span>
           <h1 className="animate-fade-up delay-100 mx-auto mt-5 max-w-3xl text-3xl font-bold leading-tight text-white sm:text-5xl">
-            Run your school’s finances, stock and records in one place.
+            Run your school’s finances and records in one place.
           </h1>
           <p className="animate-fade-up delay-200 mx-auto mt-4 max-w-2xl text-sm text-green-100 sm:text-base">
-            A secure, production-ready system for students, school fees, partial payments, receipts, materials
-            inventory, uniform distribution, reports and audit logging.
+            A secure, production-ready system for students, school fees, partial payments, receipts,
+            uniform distribution, reports and audit logging.
           </p>
           <div className="animate-fade-up delay-300 mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link

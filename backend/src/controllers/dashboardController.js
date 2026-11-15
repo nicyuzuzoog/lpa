@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import Student from '../models/Student.js';
 import Payment from '../models/Payment.js';
 import FeeStructure from '../models/FeeStructure.js';
-import InventoryItem from '../models/InventoryItem.js';
 import UniformIssuance from '../models/UniformIssuance.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
@@ -96,7 +95,7 @@ async function studentStatusCounts(year, term) {
 async function commonStats(user, year, term) {
   const startOfToday = startOfTodayUTC();
 
-  const [todayAgg, allAgg, lowStock, inventory, uniformIssued, unread, recentPayments, recentAudit, users] =
+  const [todayAgg, allAgg, uniformIssued, unread, recentPayments, recentAudit, users] =
     await Promise.all([
       Payment.aggregate([
         { $match: { status: 'ACTIVE', paymentDate: { $gte: startOfToday } } },
@@ -108,18 +107,6 @@ async function commonStats(user, year, term) {
             { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
           ])
         : Promise.resolve([]),
-      InventoryItem.find({ status: 'ACTIVE', $expr: { $lte: ['$currentStock', '$minimumStockLevel'] } }),
-      InventoryItem.aggregate([
-        { $match: { status: 'ACTIVE' } },
-        {
-          $group: {
-            _id: null,
-            items: { $sum: 1 },
-            value: { $sum: { $multiply: ['$currentStock', '$unitCost'] } },
-            stock: { $sum: '$currentStock' },
-          },
-        },
-      ]),
       UniformIssuance.countDocuments(year && term ? { academicYear: year._id, term } : {}),
       Notification.countDocuments({ audience: user._id, readBy: { $ne: user._id } }),
       Payment.find({ status: 'ACTIVE' })
@@ -141,11 +128,6 @@ async function commonStats(user, year, term) {
     todayPayments: todayAgg[0]?.count || 0,
     termCollection: allAgg[0]?.total || 0,
     termPayments: allAgg[0]?.count || 0,
-    lowStockItems: lowStock,
-    lowStockCount: lowStock.length,
-    inventoryItems: inventory[0]?.items || 0,
-    inventoryValue: inventory[0]?.value || 0,
-    inventoryStock: inventory[0]?.stock || 0,
     uniformIssued,
     unreadNotifications: unread,
     recentPayments,

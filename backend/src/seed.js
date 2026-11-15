@@ -10,7 +10,6 @@ import UniformItem from './models/UniformItem.js';
 import UniformStockTransaction from './models/UniformStockTransaction.js';
 import UniformIssuance from './models/UniformIssuance.js';
 import UniformEntitlement from './models/UniformEntitlement.js';
-import InventoryItem from './models/InventoryItem.js';
 import Student from './models/Student.js';
 import Payment from './models/Payment.js';
 import { nextSequence, pad } from './utils/sequence.js';
@@ -937,7 +936,7 @@ function payerLabel(payer) {
 // This seed is ADDITIVE and safe to run on a live database. It never drops a
 // collection and never overwrites records that already exist:
 //   - users, classes, academic year, fee structures/items, uniform items +
-//     their stock ledger, inventory and settings are only created when missing;
+//     their stock ledger and settings are only created when missing;
 //   - the full student / payment history is loaded only when the database has
 //     no students yet.
 // Run `npm run seed` as often as you like: existing data is preserved and only
@@ -1161,22 +1160,7 @@ async function run() {
     console.log(`[seed] Uniform fee menu rebuilt: ${UNIFORM_FEE_ITEMS.length} articles at the report's unit prices`);
   }
 
-  // STEP 6: OTHER INVENTORY & SETTINGS
-  const INVENTORY_ITEMS = [
-    { name: 'Kawunga', category: 'FOOD', unit: 'Bags', openingStock: 10, currentStock: 10, minimumStockLevel: 5, unitCost: 12000 },
-    { name: 'Exercise Books', category: 'SCHOOL_BOOKS', unit: 'Pieces', openingStock: 500, currentStock: 500, minimumStockLevel: 100, unitCost: 300 },
-    { name: 'Pens', category: 'STATIONERY', unit: 'Pieces', openingStock: 1000, currentStock: 1000, minimumStockLevel: 200, unitCost: 100 },
-    { name: 'Chalk', category: 'OTHER', unit: 'Boxes', openingStock: 40, currentStock: 40, minimumStockLevel: 10, unitCost: 2500 },
-  ];
-  let inventoryAdded = 0;
-  for (const inv of INVENTORY_ITEMS) {
-    const exists = await InventoryItem.findOne({ name: inv.name });
-    if (exists) continue;
-    await InventoryItem.create(inv);
-    inventoryAdded++;
-  }
-  console.log(`[seed] Inventory items: ${inventoryAdded} added, existing ones kept`);
-
+  // STEP 6: SETTINGS
   const defaults = {
     school_name: 'L.P.A RULINDO',
     school_address: 'Rulindo, Northern Province, Rwanda',

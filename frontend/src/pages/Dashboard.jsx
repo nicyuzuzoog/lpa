@@ -201,8 +201,6 @@ function StaffDashboard({ data }) {
       )}
 
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Inventory Value" value={money(data.inventoryValue)} icon="bi-box-seam" sub={`${data.inventoryItems} items`} />
-        <StatCard label="Low Stock Items" value={data.lowStockCount} icon="bi-exclamation-triangle-fill" tone={data.lowStockCount ? 'red' : 'green'} />
         <StatCard label="Uniforms Issued" value={data.uniformIssued} icon="bi-tag" />
         <StatCard label="Unread Notifications" value={data.unreadNotifications} icon="bi-bell-fill" />
       </div>
@@ -230,27 +228,6 @@ function StaffDashboard({ data }) {
         </div>
 
         <div className="space-y-4">
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Low Stock Alerts</h2>
-              <Link to="/app/inventory" className="text-xs font-medium text-green-700 dark:text-green-400 hover:underline">View all</Link>
-            </div>
-            {(data.lowStockItems || []).length === 0 ? (
-              <p className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 text-sm text-gray-500 dark:text-gray-400">All items are above minimum levels.</p>
-            ) : (
-              <ul className="divide-y divide-gray-50 dark:divide-gray-800 overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
-                {data.lowStockItems.slice(0, 6).map((i) => (
-                  <li key={i._id} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                    <span className="font-medium text-gray-700 dark:text-gray-200">{i.name}</span>
-                    <Badge className="bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400">
-                      {i.currentStock} / min {i.minimumStockLevel} {i.unit}
-                    </Badge>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
           <div>
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Recent Activity</h2>

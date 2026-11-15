@@ -75,7 +75,7 @@ export default function Login() {
             One platform for your whole school.
           </h2>
           <p className="animate-fade-up delay-100 mt-3 max-w-md text-sm text-green-100">
-            Fees, inventory, uniforms, academics and reporting — secure and effortless.
+            Fees, uniforms, academics and reporting — secure and effortless.
           </p>
 
           <ul className="mt-8 grid gap-4 sm:grid-cols-2">

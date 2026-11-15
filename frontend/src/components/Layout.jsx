@@ -44,7 +44,6 @@ const NAV = [
   {
     section: 'Stock',
     items: [
-      { to: '/app/inventory', label: 'Inventory', icon: 'bi-box-seam', perm: 'inventory:read' },
       { to: '/app/uniforms', label: 'Uniforms', icon: 'bi-tag', perm: 'uniforms:read' },
     ],
   },

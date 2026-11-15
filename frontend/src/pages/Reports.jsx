@@ -7,7 +7,7 @@ import { PageHeader, Spinner, Badge, Toolbar, StatCard } from '../components/ui.
 import Table from '../components/Table.jsx';
 import { Button, Input, Select } from '../components/Fields.jsx';
 
-const TABS = ['Collections', 'Payment Breakdown', 'Student Statement', 'Inventory', 'Uniforms', 'Fee Structures'];
+const TABS = ['Collections', 'Payment Breakdown', 'Student Statement', 'Uniforms', 'Fee Structures'];
 
 export default function Reports() {
   const toast = useToast();
@@ -44,7 +44,6 @@ export default function Reports() {
   useEffect(() => {
     if (tab === 'Collections') run('collections', '/reports/financial/collections', {}).then(() => {}).catch((e) => toast.error(e.message));
     if (tab === 'Payment Breakdown') run('breakdown', '/reports/financial/breakdown', {}).then(() => {}).catch((e) => toast.error(e.message));
-    if (tab === 'Inventory') run('inventory', '/reports/inventory', { type: 'current' }).then(() => {}).catch((e) => toast.error(e.message));
     if (tab === 'Uniforms') run('uniforms', '/reports/uniforms', {}).then(() => {}).catch((e) => toast.error(e.message));
     if (tab === 'Fee Structures') run('feeStructures', '/reports/fees', {}).then(() => {}).catch((e) => toast.error(e.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,7 +80,7 @@ export default function Reports() {
 
   return (
     <div>
-      <PageHeader title="Reports" subtitle="Financial, inventory and uniform reports. Exports respect your active filters." />
+      <PageHeader title="Reports" subtitle="Financial and uniform reports. Exports respect your active filters." />
 
       <div className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 shadow-sm">
         {TABS.map((t) => (
@@ -184,46 +183,6 @@ export default function Reports() {
       )}
 
       <StatementTab years={years} activeYear={activeYear} filters={filters} setFilters={setFilters} toast={toast} />
-
-      {tab === 'Inventory' && (
-        <div>
-          {filterBar(null)}
-          {!storage.inventory ? (
-            <Spinner />
-          ) : (
-            <>
-              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <StatCard label="Stock Value" value={money(storage.inventory.valuation)} tone="green" icon="bi-gem" />
-                <StatCard label="Items" value={storage.inventory.rows?.length} icon="bi-box-seam" />
-                <StatCard label="Low Stock Items" value={storage.inventory.lowStock?.length} icon="bi-exclamation-triangle-fill" tone={(storage.inventory.lowStock?.length || 0) ? 'red' : 'green'} />
-              </div>
-              <Table
-                columns={[
-                  { key: 'name', label: 'Item', render: (r) => <span className="font-medium text-gray-900 dark:text-gray-100">{r.name}</span> },
-                  { key: 'category', label: 'Category', render: (r) => r.category.replace('_', ' ') },
-                  { key: 'unit', label: 'Unit' },
-                  { key: 'openingStock', label: 'Opening' },
-                  { key: 'currentStock', label: 'Current', className: 'text-right font-semibold' },
-                  { key: 'minimumStockLevel', label: 'Min Level' },
-                  { key: 'value', label: 'Value', className: 'text-right', render: (r) => money(r.currentStock * (r.unitCost || 0)) },
-                  {
-                    key: 'status',
-                    label: 'Status',
-                    render: (r) =>
-                      r.currentStock <= r.minimumStockLevel ? <Badge className="bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400">LOW</Badge> : <Badge className="bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-400">OK</Badge>,
-                  },
-                ]}
-                rows={storage.inventory.rows || []}
-                emptyTitle="Empty inventory"
-              />
-              <div className="mt-3 flex justify-end gap-2">
-                <Button variant="secondary" onClick={() => { const e = exportCols([{ key: 'name', label: 'Item' }, { key: 'category', label: 'Category' }, { key: 'currentStock', label: 'Current' }, { key: 'minimumStockLevel', label: 'Min Level' }, { key: 'unitCost', label: 'Unit Cost', format: moneyFormat }, { key: 'valuation', label: 'Valuation', format: moneyFormat }]); exportPdf({ ...e, rows: (storage.inventory.rows || []).map((r) => ({ ...r, valuation: r.currentStock * (r.unitCost || 0) })), fileName: 'inventory-report' }); }}>PDF</Button>
-                <Button variant="secondary" onClick={() => { const e = exportCols([{ key: 'name', label: 'Item' }, { key: 'category', label: 'Category' }, { key: 'currentStock', label: 'Current' }, { key: 'minimumStockLevel', label: 'Min Level' }, { key: 'unitCost', label: 'Unit Cost (RWF)', format: moneyFormat }, { key: 'valuation', label: 'Valuation (RWF)', format: moneyFormat }]); exportExcel({ ...e, rows: (storage.inventory.rows || []).map((r) => ({ ...r, valuation: r.currentStock * (r.unitCost || 0) })), fileName: 'inventory-report', sheetName: 'Inventory' }); }}>Excel</Button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
       {tab === 'Uniforms' && (
         <div>

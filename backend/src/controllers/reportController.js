@@ -2,8 +2,6 @@ import mongoose from 'mongoose';
 import Payment from '../models/Payment.js';
 import Student from '../models/Student.js';
 import FeeStructure from '../models/FeeStructure.js';
-import InventoryItem from '../models/InventoryItem.js';
-import InventoryTransaction from '../models/InventoryTransaction.js';
 import UniformItem from '../models/UniformItem.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/ApiError.js';
@@ -141,39 +139,6 @@ export const studentStatement = asyncHandler(async (req, res) => {
   ]);
 
   res.json({ success: true, student, payments, summary });
-});
-
-export const inventoryReport = asyncHandler(async (req, res) => {
-  const type = req.query.type || 'current';
-  const dateFilter = dateRangeFilter(req);
-  delete dateFilter.paymentDate;
-
-  if (type === 'current') {
-    const items = await InventoryItem.find({ status: 'ACTIVE' }).sort({ name: 1 });
-    const valuation = items.reduce((a, i) => a + i.currentStock * i.unitCost, 0);
-    const low = items.filter((i) => i.currentStock <= i.minimumStockLevel);
-    return res.json({ success: true, rows: items, valuation, lowStock: low });
-  }
-
-  const match = {};
-  if (req.query.dateFrom) match.date = { ...(match.date || {}), $gte: new Date(req.query.dateFrom) };
-  if (req.query.dateTo) {
-    const to = new Date(req.query.dateTo);
-    to.setHours(23, 59, 59, 999);
-    match.date = { ...(match.date || {}), $lte: to };
-  }
-  if (req.query.category) match.category = req.query.category;
-
-  const rows = await InventoryTransaction.aggregate([
-    ...(Object.keys(match).length ? [{ $match: match }] : []),
-    { $group: { _id: { item: '$item', type: '$type' }, quantity: { $sum: '$quantity' }, count: { $sum: 1 } } },
-    { $lookup: { from: 'inventoryitems', localField: '_id.item', foreignField: '_id', as: 'item' } },
-    { $unwind: { path: '$item', preserveNullAndEmptyArrays: true } },
-    { $project: { _id: 0, item: '$item.name', unit: '$item.unit', category: '$item.category', type: '$_id.type', quantity: 1, count: 1 } },
-    { $sort: { item: 1 } },
-  ]);
-
-  res.json({ success: true, rows });
 });
 
 export const uniformReport = asyncHandler(async (req, res) => {

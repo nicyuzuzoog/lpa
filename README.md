@@ -1,7 +1,7 @@
 # School Management & Accounting System
 
 A production-focused web application for managing a private school: students, fees, payments &
-receipts, balances, inventory, uniform distribution, reports (PDF/Excel), notifications, audit
+receipts, balances, uniform distribution, reports (PDF/Excel), notifications, audit
 trail, and role-based access control.
 
 - **Frontend:** React (Vite) + Tailwind CSS 4 + React Router
@@ -78,8 +78,7 @@ If the API is hosted elsewhere, set `VITE_API_URL` to its base URL (without `/ap
 4. **Balances** → per-student required/paid/balance, filterable by class.
 5. **Uniforms** → record stock receipts; students get entitlements automatically once they pay
    the uniform fee; then issue items from stock. Verify who paid vs. received per student.
-6. **Inventory** → stock in/out/adjustment with low-stock alerts.
-7. **Reports** → collections, breakdown, outstanding balances, student statements, inventory,
+6. **Reports** → collections, breakdown, outstanding balances, student statements,
    uniforms, fee structures — all exportable to PDF and Excel.
 8. **Receipts** → printable shareable receipt, plus jsPDF export.
 9. **Teaching (Teachers)** → created by the Super Admin (Users module → role **Teacher**). Each
@@ -110,7 +109,7 @@ If the API is hosted elsewhere, set `VITE_API_URL` to its base URL (without `/ap
 | `POST /payments/:id/reverse` · `/void` | `payments:reverse` | reverse / void |
 | `GET /payments/balances` | `payments:read` | student balances |
 | `GET /payments/:id/receipt` | `payments:read` | receipt payload |
-| `GET/POST /inventory/...` · `GET/POST /uniforms/...` | `inventory:*` / `uniforms:*` | stock & distribution |
+| `GET/POST /uniforms/...` | `uniforms:*` | stock & distribution |
 | `GET /uniforms/verification/:id` | `uniforms:read` | paid vs issued per student |
 | `GET /reports/*` | `reports:read` | all reports |
 | `GET /notifications` | `notifications:read` | inbox |
@@ -122,8 +121,8 @@ If the API is hosted elsewhere, set `VITE_API_URL` to its base URL (without `/ap
 
 | Permission | SUPER_ADMIN | ACCOUNTANT | BIG_BOSS | TEACHER |
 | --- | :-: | :-: | :-: | :-: |
-| dashboard, students (read), classes (read), fees (read), payments (read), inventory (read), uniforms (read), reports, notifications (read), audit, settings (read) | ✅ | ✅ | ✅ | ✅ |
-| students (create/update), payments (create/correct/reverse), fees items, inventory & uniforms manage/issue | ✅ | ✅ | ❌ | ❌ |
+| dashboard, students (read), classes (read), fees (read), payments (read), uniforms (read), reports, notifications (read), audit, settings (read) | ✅ | ✅ | ✅ | ✅ |
+| students (create/update), payments (create/correct/reverse), fees items, uniforms manage/issue | ✅ | ✅ | ❌ | ❌ |
 | classes & academic years manage, fee structures, notifications (send), settings | ✅ | ❌ | ❌ | ❌ |
 | users read/create | ✅ | ✅ | ❌ | ❌ |
 | users edit/disable/delete, teachers (manage) | ✅ (only Super Admin) | ❌ | ❌ | ❌ |
@@ -133,7 +132,7 @@ Notes:
 - **User deletion:** the Super Admin may hard-delete a user (`DELETE /api/users/:id`, permission `users:delete`). Two accounts are protected — you cannot delete yourself, and you cannot delete the last active Super Admin. Prefer **disabling** (`status = DISABLED`) when you want to keep receipts, payments and the audit trail attached to the account.
 - **Only the Super Admin can create another Super Admin** — the Accountant's role dropdown never offers that option, and the API rejects it.
 - **Teacher records:** Only the Super Admin can manage teachers (create/update/assign). Accountants cannot delete or edit teacher records.
-- **Seed data:** `npm run seed` is **additive and non-destructive** for people and money — it never drops the database and only creates missing defaults (users, classes, academic year, fee structures/items, inventory, settings). The full student, payment and uniform-sales history is seeded **only** when the database has no students. The one exception is the **uniform dataset**: if the uniform items in the database are not exactly the 8 articles of "RAPORO Y'IMYENDA YAKIRIWE, IYATANZWE N'IYASIGAYE I BWERAMVURA", the seed removes the old uniform items, stock movements, issuances and entitlements and loads that report instead (uniform issuances point at the old items, so they cannot be kept). Once the report is loaded, later runs leave the live stock untouched. Existing non-uniform data is always preserved.
+- **Seed data:** `npm run seed` is **additive and non-destructive** for people and money — it never drops the database and only creates missing defaults (users, classes, academic year, fee structures/items, settings). The full student, payment and uniform-sales history is seeded **only** when the database has no students. The one exception is the **uniform dataset**: if the uniform items in the database are not exactly the 8 articles of "RAPORO Y'IMYENDA YAKIRIWE, IYATANZWE N'IYASIGAYE I BWERAMVURA", the seed removes the old uniform items, stock movements, issuances and entitlements and loads that report instead (uniform issuances point at the old items, so they cannot be kept). Once the report is loaded, later runs leave the live stock untouched. Existing non-uniform data is always preserved.
 
 Roles can only change through the Super Admin (no self-promotion).
 
